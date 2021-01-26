@@ -87,7 +87,7 @@ def add_to_master_table(name, password):
         c.execute("INSERT INTO master VALUES (?, ?)", (name, password))
         conn.commit()
         conn.close()
-        print("Master password for user " + name + " has been added to the database")
+        # print("Master password for user " + name + " has been added to the database")
         return 0
     else:
         print("Database already has a master password")
@@ -110,7 +110,7 @@ def add_to_info_table(info):
         print(info[3], "is already in database")
     conn.commit()
     conn.close()
-    print("Password to " + info[3] + " for user " + info[0] + " has been added to the database")
+    # print("Password to " + info[3] + " for user " + info[0] + " has been added to the database")
     return 0
 
 
@@ -131,6 +131,7 @@ def get_app_list():
     conn.close()
     return [app_entry[0] for app_entry in app_list]
 
+'''
 def get_password_to_app(app):
     conn = sqlite3.connect("pw.db")
     c = conn.cursor()
@@ -139,4 +140,33 @@ def get_password_to_app(app):
     entries = c.fetchall()
     conn.close()
     return entries
+    '''
 
+def get_info():
+    conn = sqlite3.connect("pw.db")
+    c = conn.cursor()
+    c.execute("SELECT * FROM info")
+    all_info = c.fetchall()
+    conn.close()
+    return all_info
+
+
+def show_everything():
+    conn = sqlite3.connect("pw.db")
+    c = conn.cursor()
+    c.execute("SELECT * FROM master")
+    header = c.fetchall()
+    c.execute("SELECT * FROM info")
+    info_table = c.fetchall()
+    c.execute("SELECT * FROM apps")
+    app_list = c.fetchall()
+    conn.close()
+    print("\nContents of table 'master'")
+    for head in header:
+        print(head)
+    print("\nContents of table 'apps")
+    for app_item in app_list:
+        print(app_item)
+    print("\nContents of table 'info'")
+    for item in info_table:
+        print(item)
