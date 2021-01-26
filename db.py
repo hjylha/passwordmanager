@@ -29,7 +29,8 @@ def create_app_list():
     conn = sqlite3.connect("pw.db")
     c = conn.cursor()
     c.execute("""CREATE TABLE apps (
-        app_name TEXT
+        app_name TEXT,
+        blah TEXT
     ) """)
     conn.commit()
     conn.close()
@@ -102,10 +103,9 @@ def add_to_info_table(info):
     search = "SELECT app_name FROM apps"
     c.execute(search)
     names = c.fetchall()
-    # if names == []:
-    if not(info[3] in names):
-        c.execute("INSERT INTO apps VALUES (?)", [info[3]])
-        # c.execute("INSERT INTO apps VALUES (?, ?)", (info[3], 'nonsense'))
+    if not(info[3] in [name[0] for name in names]):
+        # c.execute("INSERT INTO apps VALUES (?)", [info[3]])
+        c.execute("INSERT INTO apps VALUES (?, ?)", (info[3], 'nah'))
     else:
         print(info[3], "is already in database")
     conn.commit()
@@ -129,7 +129,7 @@ def get_app_list():
     c.execute("SELECT * FROM apps")
     app_list = c.fetchall()
     conn.close()
-    return app_list
+    return [app_entry[0] for app_entry in app_list]
 
 def get_password_to_app(app):
     conn = sqlite3.connect("pw.db")
