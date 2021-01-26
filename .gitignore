@@ -1,0 +1,6 @@
+__pycache__/
+pw.db
+salt.txt
+test.py
+test.txt
+test_db.py
