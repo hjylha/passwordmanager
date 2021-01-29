@@ -1,17 +1,22 @@
 import sqlite3
 
 """
-conn = sqlite3.connect("pw.db")
+# conn = sqlite3.connect("pw.db")
+conn = connect_to_db()
 c = conn.cursor()
 c.execute()
 conn.commit()
 conn.close()
 """
 
+# db_filename = "pw.db"
+def connect_to_db(db_filename="pw.db"):
+    return sqlite3.connect(db_filename)
+
 # create the tables
 # should the names be encrypted as well?
 def create_info_table():
-    conn = sqlite3.connect("pw.db")
+    conn = connect_to_db()
     c = conn.cursor()
     c.execute("""CREATE TABLE info (
         username TEXT,
@@ -26,7 +31,7 @@ def create_info_table():
     print("Information table added to the database")
 
 def create_app_list():
-    conn = sqlite3.connect("pw.db")
+    conn = connect_to_db()
     c = conn.cursor()
     c.execute("""CREATE TABLE apps (
         app_name TEXT,
@@ -37,7 +42,7 @@ def create_app_list():
     print("App list table added to the database")
 
 def create_master_table():
-    conn = sqlite3.connect("pw.db")
+    conn = connect_to_db()
     c = conn.cursor()
     c.execute("""CREATE TABLE master (
         master_name TEXT,
@@ -56,7 +61,7 @@ def create_db():
 # reset the database
 # maybe not necessary, just remove the db file instead
 def reset_db():
-    conn = sqlite3.connect("pw.db")
+    conn = connect_to_db()
     c = conn.cursor()
     try:
         c.execute("DROP TABLE info")
@@ -82,7 +87,7 @@ def add_to_master_table(name, password):
     # make sure these don't already exist
     info = get_master_table()
     if info == None:
-        conn = sqlite3.connect("pw.db")
+        conn = connect_to_db()
         c = conn.cursor()
         c.execute("INSERT INTO master VALUES (?, ?)", (name, password))
         conn.commit()
@@ -95,7 +100,7 @@ def add_to_master_table(name, password):
 
 # info = (username, email, password, app_name, url)
 def add_to_info_table(info):
-    conn = sqlite3.connect("pw.db")
+    conn = connect_to_db()
     c = conn.cursor()
     c.execute("INSERT INTO info VALUES (?, ?, ?, ?, ?)", info)
     
@@ -116,7 +121,7 @@ def add_to_info_table(info):
 
 # funtions to retrieve stuff from the database
 def get_master_table():
-    conn = sqlite3.connect("pw.db")
+    conn = connect_to_db()
     c = conn.cursor()
     c.execute("SELECT * FROM master")
     master = c.fetchone()
@@ -124,7 +129,7 @@ def get_master_table():
     return master
 
 def get_app_list():
-    conn = sqlite3.connect("pw.db")
+    conn = connect_to_db()
     c = conn.cursor()
     c.execute("SELECT * FROM apps")
     app_list = c.fetchall()
@@ -133,7 +138,7 @@ def get_app_list():
 
 '''
 def get_password_to_app(app):
-    conn = sqlite3.connect("pw.db")
+    conn = connect_to_db()
     c = conn.cursor()
     command = "SELECT * FROM info WHERE app_name LIKE ?"
     c.execute(command, [app])
@@ -143,7 +148,7 @@ def get_password_to_app(app):
     '''
 
 def get_info():
-    conn = sqlite3.connect("pw.db")
+    conn = connect_to_db()
     c = conn.cursor()
     c.execute("SELECT * FROM info")
     all_info = c.fetchall()
@@ -152,7 +157,7 @@ def get_info():
 
 
 def show_everything():
-    conn = sqlite3.connect("pw.db")
+    conn = connect_to_db()
     c = conn.cursor()
     c.execute("SELECT * FROM master")
     header = c.fetchall()
