@@ -4,15 +4,6 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-# only use this once
-def generate_salt():
-    salt = os.urandom(16)
-    with open("salt.txt", "wb") as salt_file:
-        salt_file.write(salt)
-
-def load_salt():
-    return open("salt.txt", "rb").read()
-
 # encryption/decryption requires bytes instead of strings
 # so we make the conversion
 # also add salt
