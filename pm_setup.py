@@ -44,6 +44,7 @@ def initiate_db(db_filename=default_db_filename, salt_filename=default_salt_file
         print(db_filename)
         print(salt_filename)
         print("Please do not remove or modify these files outside of this password manager.")
+        input("Press ENTER to continue.")
         print("\n\n")
         return (master_password, f)
     
