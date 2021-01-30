@@ -163,6 +163,23 @@ def get_info(db_filename=default_db_filename):
     conn.close()
     return all_info
 
+def get_info_w_rowid(db_filename=default_db_filename):
+    conn = connect_to_db(db_filename)
+    c = conn.cursor()
+    c.execute("SELECT rowid, * FROM info")
+    all_info = c.fetchall()
+    conn.close()
+    return all_info
+
+
+# modify password on a specific row
+def modify_password_by_rowid(rowid, new_password, db_filename=default_db_filename):
+    conn = connect_to_db(db_filename)
+    c = conn.cursor()
+    c.execute("UPDATE info SET password = ? WHERE rowid = ?", (new_password, rowid))
+    conn.commit()
+    conn.close()
+
 
 def show_everything(db_filename=default_db_filename):
     conn = connect_to_db(db_filename)
@@ -184,8 +201,18 @@ def show_everything(db_filename=default_db_filename):
     for item in info_table:
         print(item)
 
+# check if database has a username and password
 def check_db(db_filename=default_db_filename):
     master = get_master_table(db_filename)
     if master == None:
         return False
     return True
+
+# only used for testing, at least for now
+def delete_row(rowid, db_filename=default_db_filename):
+    conn = connect_to_db(db_filename)
+    c = conn.cursor()
+    # here rowid needs to be string for some reason
+    c.execute("DELETE from info WHERE rowid = ?", str(rowid))
+    conn.commit()
+    conn.close()
