@@ -1,12 +1,12 @@
 
 <!-- inspired by github.com/KalleHallden/pwManager -->
 
-<!-- postgress database -->
 
-At this point only test.py works, so
-`python test.py`
 
-Oh, right. It's not part of the repository...
+To use the password manager, just use command
+`python pm.py`
+
+
 
 ### Libraries/modules used:
 * cryptography
