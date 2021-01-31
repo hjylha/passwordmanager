@@ -1,45 +1,33 @@
 
+# import os
 import getpass
-from crypto_stuff import load_salt, do_crypto_stuff, encrypt_text, decrypt_text, encrypt_text_list, decrypt_text_list
-from db import add_to_info_table, get_master_table, get_info, get_app_list
+# import pyperclip
+from crypto_stuff import do_crypto_stuff, encrypt_text, decrypt_text, encrypt_text_list, decrypt_text_list
+# import db
+from db import default_db_filename, check_db
+import crypto_db
+import pm_setup
+from pm_setup import default_salt_filename
+import pm_fcns as pm
+import password_generator as pg
+
+db_filename = default_db_filename
+salt_filename = default_salt_filename
+
+def end_prompt():
+    input("Press ENTER to return back to menu.")
+    print("\n")
 
 
-def initiate_db():
-    from db import reset_db, add_to_master_table
-    from crypto_stuff import generate_salt, load_salt
-    username = getpass.getuser()
-    print("Initiating password database for user" + username + "...\n")
-    reset_db()
-    password_accepted = False
-    while not(password_accepted):
-        master_password = getpass.getpass(prompt='Please enter master password for password manager: ')
-        master_password2 = getpass.getpass(prompt='Please enter the master password again: ')
-        if master_password == master_password2:
-            print("Master password created.\n")
-            password_accepted = True
-        else:
-            print("Passwords you typed are not the same. Please try again.")
-        # print("Generating salt file...")
-        generate_salt()
-        # print("Salt file generated. Please do not remove or modify it.")
-        f = do_crypto_stuff(master_password, load_salt(), 100000)
-        pw_encrypted = encrypt_text(master_password, master_password, f)
-        un_encrypted = encrypt_text(username, master_password, f)
-        add_to_master_table(un_encrypted, pw_encrypted)
-        print("Password database initiated. Following files created:")
-        print("pw.db")
-        print("salt.txt")
-        print("Please do not remove or modify these files outside of this password manager.")
-        print("\n\n")
-        return (master_password, f)
-
+# def password_manager(db_filename=default_db_filename, salt_filename=default_salt_filename):
 
 # starting text
 print("Welcome to my Password Manager\n")
 
 # check if DB has been initiated
-master = get_master_table()
-if master == None:
+# master = db.get_master_table(db_filename)
+is_initiated = check_db(db_filename)
+if not(is_initiated):
     print("Password database has not been initiated yet.")
     print("Do you want to initiate it? (Y/N)")
     answered = False
@@ -48,7 +36,7 @@ if master == None:
         if answer.lower() == "y":
             answered = True
             print("\n")
-            initiation_data = initiate_db()
+            initiation_data = pm_setup.initiate_db()
         elif answer.lower() == "n":
             answered = True
             exit()
@@ -59,9 +47,9 @@ try:
 except NameError:
     username = getpass.getuser()
     master_password = getpass.getpass(prompt='Enter the master password: ')
-    f = do_crypto_stuff(master_password, load_salt(), 100000)
+    f = do_crypto_stuff(master_password, pm_setup.load_salt(salt_filename), 100000)
     # check that they are in the database
-    master_d = decrypt_text_list(master, master_password, f)
+    master_d = crypto_db.get_master_table(master_password, f)
     if not(username == master_d[0] and master_password == master_d[1]):
         print("Invalid password or username")
         exit()
@@ -79,7 +67,8 @@ except NameError:
 # h_user = username
 # h_pw = master_password
 
-
+# maybe clear screen before starting
+pm.clear_screen()
 print("Password Manager for user", username, "\n")
 
 # the program loop
@@ -94,16 +83,20 @@ while True:
     if action == "0":
         exit()
     elif action == "1":
-        # TODO
-        print("adding pw")
+        pm.add_password(master_password, f)
+        end_prompt()
     elif action == "2":
-        # TODO
-        print("changing pw")
+        pm.change_password(master_password, f)
+        end_prompt()
     elif action == "3":
-        # TODO
-        print("retrieving pw")
+        pm.find_password_for_app(master_password, f)
+        end_prompt()
     elif action == "4":
-        # TODO
-        print("showing a list")
+        print("These are the apps you have saved passwords for:")
+        app_list = crypto_db.get_app_list(master_password, f)
+        for app in app_list:
+            print("\t", app)
+        print("\n")
+        end_prompt()
     else:
-        print("Invalid input. Please choose 1, 2, 3, 4 or 0")
+        print("Invalid input. Please choose one of the options.\n")
