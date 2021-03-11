@@ -40,11 +40,13 @@ def password_manager(db_filename=default_db_filename, salt_filename=default_salt
                 answered = True
                 exit()
 
+    # continue pm program
+    username = getpass.getuser()
     try:
         master_password = initiation_data[0]
         f = initiation_data[1]
     except NameError:
-        username = getpass.getuser()
+        # username = getpass.getuser()
         master_password = getpass.getpass(prompt='Enter the master password: ')
         f = do_crypto_stuff(master_password, pm_setup.load_salt(salt_filename), 100000)
         # check that they are in the database
