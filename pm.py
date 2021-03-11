@@ -43,10 +43,11 @@ def password_manager(db_filename=default_db_filename, salt_filename=default_salt
     # continue pm program
     username = getpass.getuser()
     try:
+        # first time using pm we already asked password
         master_password = initiation_data[0]
         f = initiation_data[1]
     except NameError:
-        # username = getpass.getuser()
+        # otherwise ask password and check if it's correct
         master_password = getpass.getpass(prompt='Enter the master password: ')
         f = do_crypto_stuff(master_password, pm_setup.load_salt(salt_filename), 100000)
         # check that they are in the database
@@ -54,19 +55,6 @@ def password_manager(db_filename=default_db_filename, salt_filename=default_salt
         if not(username == master_d[0] and master_password == master_d[1]):
             print("Invalid password or username")
             exit()
-
-
-    # username also used for encryption/decryption
-    # maybe something better should be used?
-    # username = getpass.getuser()
-    # ask master password
-    # master_password = getpass.getpass(prompt='Enter the master password: ')
-
-    # some options how to make use of username and password
-    # TODO
-    # pw = master_password + username
-    # h_user = username
-    # h_pw = master_password
 
     # maybe clear screen before starting
     pm.clear_screen()
