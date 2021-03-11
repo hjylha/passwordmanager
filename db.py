@@ -203,7 +203,10 @@ def show_everything(db_filename=default_db_filename):
 
 # check if database has a username and password
 def check_db(db_filename=default_db_filename):
-    master = get_master_table(db_filename)
+    try:
+        master = get_master_table(db_filename)
+    except sqlite3.OperationalError:
+        return False
     if master == None:
         return False
     return True
