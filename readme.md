@@ -1,9 +1,11 @@
 
 <!-- inspired by github.com/KalleHallden/pwManager -->
 
+A console application to manage a local database of passwords.
 
+The way to encrypt/decrypt the data was taken from an example in the documentation of the cryptography library.
 
-To use the password manager, just use command
+To start the password manager, just use command
 `python pm.py`
 
 
@@ -18,6 +20,6 @@ To use the password manager, just use command
 
 
 ### Possible improvements
-* It would be better to have things set up in such a way that it is not necessary for the master password to be decrypted
+* Encryption/decryption/hashing can most likely be improved
 * Replacing 'input' with something else
 * Everyone wants a fancy GUI...
