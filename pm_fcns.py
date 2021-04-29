@@ -61,7 +61,7 @@ def save_password_to_db_or_not(info, master_pw, fernet_thing):
             print("app url:", info[4])
             return True
         elif answer.lower == "n":
-            ans = input("Do you want to generate password again? (Y/N)")
+            ans = input("Do you want to generate password again? (Y/N) ")
             while True:
                 if ans.lower() == "y":
                     return False
@@ -90,8 +90,8 @@ def change_password_in_db_or_not(db_line, master_pw, fernet_thing):
             print("app url:", db_line[5])
             return True
         elif answer.lower == "n":
-            ans = input("Do you want to generate new password again? (Y/N)")
             while True:
+                ans = input("Do you want to generate new password again? (Y/N) ")
                 if ans.lower() == "y":
                     return False
                 elif ans.lower() == "n":
@@ -170,10 +170,10 @@ def add_password(master_pw, fernet_thing):
                     db_line = (info[0], info[1], pw, info[2], info[3])
                     pw_okd = save_password_to_db_or_not(db_line, master_pw, fernet_thing)
                 else:
-                    ans = input("Passwords were not the same. Do you want to try again? (Y/N)")
                     while True:
+                        ans = input("Passwords were not the same. Do you want to try again? (Y/N) ")
                         if ans.lower() == "y":
-                            pass
+                            break
                         elif ans.lower() == "n":
                             print("Adding password canceled.")
                             return
@@ -222,10 +222,10 @@ def change_password_in_db(db_line, master_pw, fernet_thing):
                     pw_okd = change_password_in_db_or_not(db_line_new, master_pw, fernet_thing)
                     # pw_okd = save_password_to_db_or_not(db_line, master_pw, fernet_thing)
                 else:
-                    ans = input("Passwords were not the same. Do you want to try again? (Y/N)")
                     while True:
+                        ans = input("Passwords were not the same. Do you want to try again? (Y/N) ")
                         if ans.lower() == "y":
-                            pass
+                            break
                         elif ans.lower() == "n":
                             print("Adding password canceled.")
                             return
