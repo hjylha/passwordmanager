@@ -1,13 +1,12 @@
 import os
 import getpass
-# import db
-from db import default_db_filename, reset_db
-# import crypto_stuff
-from crypto_stuff import do_crypto_stuff
+from pm_data import default_db_filename, default_salt_filename
+from db import reset_db
+from crypto_stuff import do_crypto_stuff, create_hash_storage
 import crypto_db
 
 # default_db_filename = "pw.db"
-default_salt_filename = "salt.txt"
+# default_salt_filename = "salt.txt"
 
 # only use this once
 def generate_salt(filename=default_salt_filename):

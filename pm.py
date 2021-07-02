@@ -2,12 +2,12 @@
 # import os
 import getpass
 # import pyperclip
-from crypto_stuff import do_crypto_stuff, encrypt_text, decrypt_text, encrypt_text_list, decrypt_text_list
+from crypto_stuff import do_crypto_stuff, encrypt_text, decrypt_text, encrypt_text_list, decrypt_text_list, create_hash_storage
 # import db
-from db import default_db_filename, check_db
+from db import check_db
 import crypto_db
 import pm_setup
-from pm_setup import default_salt_filename
+from pm_data import default_db_filename, default_salt_filename
 import pm_fcns as pm
 import pg
 

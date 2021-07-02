@@ -1,15 +1,14 @@
 import sqlite3
+from pm_data import default_db_filename
 
-"""
 # conn = sqlite3.connect("pw.db")
-conn = connect_to_db()
-c = conn.cursor()
-c.execute()
-conn.commit()
-conn.close()
-"""
+# conn = connect_to_db()
+# c = conn.cursor()
+# c.execute()
+# conn.commit()
+# conn.close()
 
-default_db_filename = "pw.db"
+# default_db_filename = "pw.db"
 
 def connect_to_db(db_filename=default_db_filename):
     return sqlite3.connect(db_filename)
