@@ -13,10 +13,10 @@ To start the password manager, just use command
 ### Libraries/modules used:
 * cryptography
 * pyperclip
-* base64
+<!-- * base64
 * getpass
 * sqlite3
-* os
+* os -->
 
 
 ### Possible improvements

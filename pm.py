@@ -9,7 +9,7 @@ import crypto_db
 import pm_setup
 from pm_setup import default_salt_filename
 import pm_fcns as pm
-import password_generator as pg
+import pg
 
 db_filename = default_db_filename
 salt_filename = default_salt_filename

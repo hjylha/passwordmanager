@@ -8,7 +8,7 @@ def characters_by_type():
     return (lower_letters, upper_letters, numbers, extra_characters)
 
 # with or without extra characters (choice=0 or 1)
-def generate_password(num_of_chars=13, choice=0):
+def generate_password(num_of_chars=16, choice=0):
     available_character_types = characters_by_type()
     if choice == 0:
         possible_chars = random.choices(available_character_types, k=num_of_chars)

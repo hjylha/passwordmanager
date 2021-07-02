@@ -3,7 +3,7 @@ import pyperclip
 import os
 import getpass
 import crypto_db
-import password_generator as pg
+import pg
 
 
 def clear_screen():
