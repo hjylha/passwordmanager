@@ -14,6 +14,18 @@ def clear_screen():
     else:
         _ = os.system('clear')
 
+
+# get the answer to a yes/no question from user
+def yes_or_no_question(question_text):
+    help_text = "Please answer Y or N for yes or no."
+    while True:
+        answer = input(question_text + " (Y/N) ")
+        if answer.lower() == "y":
+            return "y"
+        if answer.lower() == "n":
+            return "n"
+        print(help_text)
+
 # info = [username, email, password, app, url]
 def obtain_password(info):
     print("Password found for", info[3], "user", info[0])
