@@ -58,12 +58,12 @@ def initiate_db(db_filename=default_db_filename, salt_filename=default_salt_file
     un_hashed = create_hash_storage(username, local_salt)
     pw_hashed = create_hash_storage(master_password, local_salt)
     add_to_master_table(un_hashed, pw_hashed, db_filename)
-    
+
     print("Password database initiated. Following files created:")
     print(db_filename)
     print(salt_filename)
     print("Please do not remove or modify these files outside of this password manager.")
     input("Press ENTER to continue.")
     print("\n\n")
-    return (master_password, f)
+    return (username, master_password, f)
     
