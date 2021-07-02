@@ -1,5 +1,5 @@
-import os
 import base64
+import hashlib
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -25,3 +25,14 @@ def encrypt_text_list(text_list, password, fernet_thing):
 
 def decrypt_text_list(text_list, password, fernet_thing):
     return [decrypt_text(text, password, fernet_thing) for text in text_list]
+
+# hashing passwords (and usernames?)
+def hash_text(text, salt, num_of_iterations=200_000):
+    encoded_text = text.encode('utf-8')
+    iteration = num_of_iterations + len(text) * 1000
+    return hashlib.pbkdf2_hmac('sha256', encoded_text, salt, iteration)
+    
+def create_hash_storage(text, salt, num_of_iterations=200_000):
+    key = hash_text(text, salt, num_of_iterations)
+    stored_value = salt + key
+    return stored_value
