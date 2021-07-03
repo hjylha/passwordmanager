@@ -81,7 +81,6 @@ def password_manager(db_filename=default_db_filename, salt_filename=default_salt
             end_prompt()
         elif action == "4":
             pm.delete_password(master_password, f)
-            print("Action not available yet.")
             end_prompt()
         elif action == "5":
             print("These are the apps you have saved passwords for:")

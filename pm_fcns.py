@@ -4,6 +4,7 @@ import os
 import getpass
 import crypto_db
 import pg
+from db import delete_row
 
 
 def clear_screen():
@@ -287,4 +288,13 @@ def change_password(master_pw, fernet_thing):
     change_password_in_db(result, master_pw, fernet_thing)
 
 def delete_password(master_pw, fernet_thing):
-    pass
+    result = find_app_and_username("What is the app whose password you want to delete", master_pw, fernet_thing)
+    if result == []:
+        return
+    print_info("The following information will be deleted from the database:", result[1:])
+    ans = yes_or_no_question("Do you want to delete this information?")
+    if ans == "y":
+        delete_row(result[0])
+        print("Password has been deleted from the database.")
+    if ans == "n":
+        print("Delete process cancelled.")
