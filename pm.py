@@ -13,8 +13,11 @@ import pg
 db_filename = default_db_filename
 salt_filename = default_salt_filename
 
+# ask to press enter, and clear clipboard
 def end_prompt():
-    input("Press ENTER to return back to menu.")
+    print("\n")
+    getpass.getpass("Press ENTER to return back to menu. (This also clears clipboard)")
+    pm.clear_clipboard()
     print("\n")
 
 
