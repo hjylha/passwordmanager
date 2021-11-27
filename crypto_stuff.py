@@ -12,19 +12,19 @@ def do_crypto_stuff(password, given_salt, num_of_iterations):
     return Fernet(key)
 
 # then we can encrypt and decrypt:
-def encrypt_text(text, password, fernet_thing):
+def encrypt_text(text, fernet_thing):
     encoded_text = text.encode('utf-8')
     return fernet_thing.encrypt(encoded_text).decode('utf-8')
 
-def decrypt_text(text, password, fernet_thing):
+def decrypt_text(text, fernet_thing):
     encoded_text = text.encode('utf-8')
     return fernet_thing.decrypt(encoded_text).decode('utf-8')
 
-def encrypt_text_list(text_list, password, fernet_thing):
-    return [encrypt_text(text, password, fernet_thing) for text in text_list]
+def encrypt_text_list(text_list, fernet_thing):
+    return [encrypt_text(text, fernet_thing) for text in text_list]
 
-def decrypt_text_list(text_list, password, fernet_thing):
-    return [decrypt_text(text, password, fernet_thing) for text in text_list]
+def decrypt_text_list(text_list, fernet_thing):
+    return [decrypt_text(text, fernet_thing) for text in text_list]
 
 # hashing passwords (and usernames?)
 def hash_text(text, salt, num_of_iterations=200_000):

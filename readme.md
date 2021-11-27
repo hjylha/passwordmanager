@@ -18,6 +18,9 @@ To start the password manager, just use command
 * sqlite3
 * os -->
 
+More detailed requirements can be found in requirements.txt.
+
+
 
 ### Possible improvements
 * Encryption/decryption/hashing can most likely be improved

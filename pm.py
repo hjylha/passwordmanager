@@ -71,20 +71,20 @@ def password_manager(db_filename=default_db_filename, salt_filename=default_salt
         if action == "0":
             exit()
         elif action == "1":
-            pm.add_password(master_password, f)
+            pm.add_password(f)
             end_prompt()
         elif action == "2":
-            pm.change_password(master_password, f)
+            pm.change_password(f)
             end_prompt()
         elif action == "3":
-            pm.find_password_for_app(master_password, f)
+            pm.find_password_for_app(f)
             end_prompt()
         elif action == "4":
-            pm.delete_password(master_password, f)
+            pm.delete_password(f)
             end_prompt()
         elif action == "5":
             print("These are the apps you have saved passwords for:")
-            app_list = crypto_db.get_app_list(master_password, f)
+            app_list = crypto_db.get_app_list(f)
             for app in app_list:
                 print("\t", app)
             print("\n")

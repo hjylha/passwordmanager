@@ -129,11 +129,11 @@ def get_info_from_user():
     return (un, email, app_name, url)
 
 # get the info and check that app and username are not already in database
-def get_unique_info_from_user(master_pw, fernet_thing):
+def get_unique_info_from_user(fernet_thing):
     while True:
         # info = (username, email, app, url)
         info = get_info_from_user()
-        if not(crypto_db.is_info_in_db(info, master_pw, fernet_thing)):
+        if not(crypto_db.is_info_in_db(info, fernet_thing)):
             return info
         print("Password for user", info[0], "to app", info[2], "already in database.")
         ans = yes_or_no_question("Do you want to try again?")
@@ -142,10 +142,10 @@ def get_unique_info_from_user(master_pw, fernet_thing):
             return []
 
 # find correct app and username from users input
-def find_app_and_username(first_line, master_pw, fernet_thing):
+def find_app_and_username(first_line, fernet_thing):
     print(first_line)
     app_name = input("\t")
-    results = crypto_db.get_info_for_app_w_rowid(app_name, master_pw, fernet_thing)
+    results = crypto_db.get_info_for_app_w_rowid(app_name, fernet_thing)
     if results == []:
         print("No passwords related to", app_name, "found\n")
         return []
@@ -177,21 +177,21 @@ def find_app_and_username(first_line, master_pw, fernet_thing):
             pass
 
 # find and reveal password based on users input
-def find_password_for_app(master_pw, fernet_thing):
-    result = find_app_and_username("Write the name of the app you want password for:", master_pw, fernet_thing)
+def find_password_for_app(fernet_thing):
+    result = find_app_and_username("Write the name of the app you want password for:", fernet_thing)
     if result == []:
         return
     obtain_password(result, True)
 
 
 # try to add info into database. returns True if process is complete (added or cancelled)
-def save_password_to_db_or_not(info, master_pw, fernet_thing):
+def save_password_to_db_or_not(info, fernet_thing):
     answer = yes_or_no_question("Do you want to save this password to the database?")
     if answer == "y":
         print_info("The following information will be saved to the database:", info)
         answer2 = yes_or_no_question("Do you want to proceed?")
         if answer2 == "y":
-            crypto_db.add_info(info, master_pw, fernet_thing)
+            crypto_db.add_info(info, fernet_thing)
             print("Password for user " + info[0] + " to app " + info[3] + " has been saved to the database.")
             return True
         if answer2 == "n":
@@ -210,13 +210,13 @@ def save_password_to_db_or_not(info, master_pw, fernet_thing):
             return True
 
 # db_line has (rowid, username, email, password, app, url)
-def change_password_in_db_or_not(db_line, master_pw, fernet_thing):
+def change_password_in_db_or_not(db_line, fernet_thing):
     answer = yes_or_no_question("Do you want to save this password to the database?")
     if answer == "y":
         print_info("The following information will be updated in the database:", db_line[1:])
         answer2 = yes_or_no_question("Do you want to proceed?")
         if answer2 == "y":
-            crypto_db.change_pw_in_row(db_line[0], db_line[3], master_pw, fernet_thing)
+            crypto_db.change_pw_in_row(db_line[0], db_line[3], fernet_thing)
             print("Password has been updated.")
             return True
         if answer2 == "n":
@@ -232,9 +232,9 @@ def change_password_in_db_or_not(db_line, master_pw, fernet_thing):
 
 
 # the whole process of adding a new password into database
-def add_password(master_pw, fernet_thing):
+def add_password(fernet_thing):
     # get the info from user
-    info = get_unique_info_from_user(master_pw, fernet_thing)
+    info = get_unique_info_from_user(fernet_thing)
     # if user does not want to give info, back to the main menu
     if info == []:
         print("Adding password canceled.")
@@ -254,11 +254,11 @@ def add_password(master_pw, fernet_thing):
             reveal_password(pw)
         # finally, try to save the password
         db_line = (info[0], info[1], pw, info[2], info[3])
-        if save_password_to_db_or_not(db_line, master_pw, fernet_thing):
+        if save_password_to_db_or_not(db_line, fernet_thing):
             return
 
 # db_line has (rowid, username, email, password, app, url)
-def change_password_in_db(db_line, master_pw, fernet_thing):
+def change_password_in_db(db_line, fernet_thing):
     while True:
         # generate password
         gen_type = how_to_generate_pw()
@@ -273,22 +273,22 @@ def change_password_in_db(db_line, master_pw, fernet_thing):
             reveal_password(pw)
         # try to update database
         db_line_new = (db_line[0], db_line[1], db_line[2], pw, db_line[4], db_line[5])
-        if change_password_in_db_or_not(db_line_new, master_pw, fernet_thing):
+        if change_password_in_db_or_not(db_line_new, fernet_thing):
             # if update succesful or user cancels, return to main menu
             return
 
 # the whole process of changing a password
-def change_password(master_pw, fernet_thing):
-    result = find_app_and_username("What is the app you want to change password for?", master_pw, fernet_thing)
+def change_password(fernet_thing):
+    result = find_app_and_username("What is the app you want to change password for?", fernet_thing)
     # if nothing found, return to main menu
     if result == []:
         return
     # show the app and username
     obtain_password(result, False)
-    change_password_in_db(result, master_pw, fernet_thing)
+    change_password_in_db(result, fernet_thing)
 
-def delete_password(master_pw, fernet_thing):
-    result = find_app_and_username("What is the app whose password you want to delete", master_pw, fernet_thing)
+def delete_password(fernet_thing):
+    result = find_app_and_username("What is the app whose password you want to delete", fernet_thing)
     if result == []:
         return
     print_info("The following information will be deleted from the database:", result[1:])
