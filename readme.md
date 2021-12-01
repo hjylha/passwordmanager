@@ -12,7 +12,9 @@ To start the password manager, just use command
 
 ### Libraries/modules used:
 * cryptography
+* argo2-cffi
 * pyperclip
+* pytest 
 <!-- * base64
 * getpass
 * sqlite3

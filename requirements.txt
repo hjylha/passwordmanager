@@ -1,6 +1,17 @@
+argon2-cffi==21.1.0
+atomicwrites==1.4.0
+attrs==21.2.0
 certifi==2021.10.8
 cffi==1.15.0
+colorama==0.4.4
 cryptography==36.0.0
+iniconfig==1.1.1
+packaging==21.3
+pluggy==1.0.0
+py==1.11.0
 pycparser==2.21
+pyparsing==3.0.6
 pyperclip==1.8.2
+pytest==6.2.5
+toml==0.10.2
 wincertstore==0.2
