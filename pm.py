@@ -8,7 +8,6 @@ import crypto_db
 from pm_setup import load_salt, initiate_db
 from pm_data import default_db_filename, default_salt_filename
 import pm_fcns as pm
-import pg
 
 db_filename = default_db_filename
 salt_filename = default_salt_filename

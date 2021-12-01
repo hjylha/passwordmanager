@@ -122,3 +122,10 @@ def test_get_characters():
 def test_generate_password():
     pwd = cs.generate_password()
     assert len(pwd) == 20
+    # only letters and numbers
+    chars = "abcdefghijklmnopqrstuvwxyz"
+    chars += chars.upper() + "0123456789"
+    pwd = cs.generate_password(20, True)
+    assert len(pwd) == 20
+    for char in pwd:
+        assert char in chars

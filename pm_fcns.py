@@ -3,7 +3,7 @@ import pyperclip
 import os
 import getpass
 import crypto_db
-import pg
+from crypto_stuff import generate_password
 from db import delete_row
 
 
@@ -95,10 +95,10 @@ def generate_pw(type_num):
         return ""
     # generate using all characters
     if type_num == 1:
-        return pg.generate_password()
+        return generate_password()
     # generate using letters and numbers
     if type_num == 2:
-        return pg.generate_password(choice=1)
+        return generate_password(choice=1)
     # user makes the password (or saves an existing one to database)
     if type_num == 3:
         while True:

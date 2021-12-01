@@ -2,6 +2,7 @@ import string
 import base64
 import hashlib
 import secrets
+
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -71,15 +72,15 @@ def check_tuple(h_tuple, a_tuple):
     return True
 
 
-# get string of characters for password generator (0: all, 1: only letters and numbers)
-def get_characters(mode=0):
+# get string of characters for password generator (False: all, True: only letters and numbers)
+def get_characters(choice=False):
     characters = string.ascii_letters + string.digits
-    if not mode:
+    if not choice:
         extra_characters = '(,._-*~"<>/|!@#$%^&)+='
         return characters + extra_characters
     return characters
 
 # generate password of given length with or without extra characters
-def generate_password(length=20, choice=0):
+def generate_password(length=20, choice=False):
     characters = get_characters(choice)
     return "".join(secrets.choice(characters) for _ in range(length))
