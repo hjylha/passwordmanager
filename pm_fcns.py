@@ -26,6 +26,12 @@ def clear_clipboard():
     #     windll.user32.CloseClipboard()
     # print("Clipboard cleared")
 
+# ask for username and password
+def ask_for_username_and_password():
+    # print()
+    username = getpass.getpass("Enter your username: ")
+    password = getpass.getpass("Enter the master password: ")
+    return (username, password)
 
 # print a header line and a line from database
 def print_info(first_line, info):

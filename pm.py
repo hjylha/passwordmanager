@@ -2,7 +2,7 @@
 # import os
 import getpass
 # import pyperclip
-from crypto_stuff import do_crypto_stuff, encrypt_text, decrypt_text, encrypt_text_list, decrypt_text_list, create_hash_storage
+from crypto_stuff import do_crypto_stuff, create_hash_storage
 from db import check_db, get_master_table
 import crypto_db
 from pm_setup import load_salt, initiate_db
@@ -28,8 +28,9 @@ def password_manager(db_filename=default_db_filename, salt_filename=default_salt
     # is_initiated = check_db(db_filename)
     if check_db(db_filename):
         # if initiated, ask for username and password
-        username = input("Enter your username: ")
-        master_password = getpass.getpass(prompt='Enter the master password: ')
+        username, master_password = pm.ask_for_username_and_password()
+        # username = input("Enter your username: ")
+        # master_password = getpass.getpass(prompt='Enter the master password: ')
         f = do_crypto_stuff(master_password, load_salt(salt_filename), 100000)
         # check that they are in the database
         # master_d = crypto_db.get_master_table(master_password, f)
@@ -55,6 +56,7 @@ def password_manager(db_filename=default_db_filename, salt_filename=default_salt
 
     # maybe clear screen before starting
     pm.clear_screen()
+    master_password = None
     print("Password Manager for user", username, "\n")
 
     # the program loop
