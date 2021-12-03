@@ -75,11 +75,19 @@ class TestDummydata():
 
 class TestInitiation():
 
+    def test_initiate_auth_db(self, db):
+        dba = dbs.initiate_db(db.filepath, 'auth')
+        assert len(dba.select_all('auth')) == 10
+
     def test_initiate_keys_db(self, db):
-        dbk = dbs.initiate_keys_db(db.filepath)
-        assert len(dbk.select_all('auth')) == 10
+        dbk = dbs.initiate_db(db.filepath, 'keys')
+        assert len(dbk.select_all('app_keys')) == 10
+        assert len(dbk.select_all('email_keys')) == 10
+        assert len(dbk.select_all('data_keys')) == 10
 
 
     def test_initiate_password_db(self, db):
-        dbp = dbs.initiate_password_db(db.filepath)
-        assert dbp.select_all('apps') == []
+        dbp = dbs.initiate_db(db.filepath, 'password')
+        assert len(dbp.select_all('apps')) == 10
+        assert len(dbp.select_all('emails')) == 10
+        assert len(dbp.select_all('data')) == 10
