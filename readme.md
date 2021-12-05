@@ -3,6 +3,8 @@
 
 A console application to manage a local database of passwords.
 
+![password manager in use](pm_screenshot2.png)
+
 The way to encrypt/decrypt the data was taken from an example in the documentation of the cryptography library.
 
 To start the password manager, just use command
