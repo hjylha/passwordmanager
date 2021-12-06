@@ -3,6 +3,7 @@ import base64
 import hashlib
 import secrets
 
+import cryptography
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -24,6 +25,15 @@ def encrypt_text(text, fernet_thing):
 def decrypt_text(text, fernet_thing):
     encoded_text = text.encode('utf-8')
     return fernet_thing.decrypt(encoded_text).decode('utf-8')
+
+# wanted: no exceptions when trying to decrypt dummy data
+def try_decrypt_wo_exceptions(encrypted_text, fernet_thing):
+    try:
+        return fernet_thing.decrypt(encrypted_text)
+    except cryptography.fernet.InvalidToken:
+        return None
+    # except cryptography.exceptions.InvalidSignature:
+        
 
 def encrypt_text_list(text_list, fernet_thing):
     return [encrypt_text(text, fernet_thing) for text in text_list]
@@ -57,7 +67,7 @@ def check_password_hash(hash, password):
     except argon2.exceptions.VerifyMismatchError:
         return False
 
-# hash a couple of values
+# hash a couple of values (should not be needed)
 def hash_tuple(a_tuple):
     ph = PasswordHasher()
     return tuple(ph.hash(item) for item in a_tuple)
@@ -83,4 +93,4 @@ def get_characters(choice=False):
 # generate password of given length with or without extra characters
 def generate_password(length=20, choice=False):
     characters = get_characters(choice)
-    return "".join(secrets.choice(characters) for _ in range(length))
+    return ''.join(secrets.choice(characters) for _ in range(length))

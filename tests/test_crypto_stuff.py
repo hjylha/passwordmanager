@@ -1,4 +1,5 @@
 from pathlib import Path
+from cryptography.fernet import Fernet
 import pytest
 
 import fix_imports
@@ -44,6 +45,15 @@ def test_decrypt_text(fernet_thing):
     text = "very secret"
     encrypted = cs.encrypt_text(text, fernet_thing)
     assert text == cs.decrypt_text(encrypted, fernet_thing)
+
+
+def test_try_decrypt_wo_exceptions(fernet_thing):
+    text = "very secret"
+    encrypted = cs.encrypt_text(text, fernet_thing)
+    assert text == cs.try_decrypt_wo_exceptions(encrypted.encode(), fernet_thing).decode()
+
+    encrypted = Fernet(Fernet.generate_key()).encrypt(text.encode())
+    assert cs.try_decrypt_wo_exceptions(encrypted, fernet_thing) is None
 
 
 def test_encrypt_text_list(fernet_thing):
