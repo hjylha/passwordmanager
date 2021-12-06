@@ -147,6 +147,8 @@ class DB_keys(DB_general):
             elif in_use.decode() == 'in_use':
                 in_use_rowids.append(row[0])
             else:
+                raise Exception(f'Questionable: {in_use.decode()=}')
+                print(in_use.decode())
                 vacant_rowids.append(row[0])
         return [vacant_rowids, in_use_rowids]
 
@@ -163,10 +165,21 @@ class DB_keys(DB_general):
         rowid = cs.secrets.choice(available_rowids)
         key = Fernet.generate_key()
         self.insert_key(key, table, rowid, master_key)
+        return rowid, key
 
     # get the actual key
     def decrypt_key(self, encrypted_key, master_key):
         return Fernet(master_key).decrypt(encrypted_key)
+    
+    # return a dict with rowids as keys and (decrypted) keys as values
+    def get_rows_and_keys(self, table, master_key):
+        used_rowids = self.find_vacancies(table, master_key)[1]
+        all_rows = self.select_all(table)
+        rows_and_keys = dict()
+        for row in all_rows:
+            if row[0] in used_rowids:
+                rows_and_keys[row[0]] = self.decrypt_key(row[1], master_key)
+        return rows_and_keys
 
 
 class DB_password(DB_general):

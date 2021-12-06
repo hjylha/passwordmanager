@@ -170,19 +170,65 @@ class TestDBauth():
 class TestDBkeys():
 
     def test_find_vacancies(self, dbk, master_key):
-        for table in dbk.table_tuple:
-            vacancies = dbk.find_vacancies(table, master_key)
-            assert vacancies[1] == []
-            assert vacancies[0] == [i+1 for i in range(10)]
+        table = 'app_keys'
+        vacancies = dbk.find_vacancies(table, master_key)
+        # added keys to rowids 2 and 5
+        assert vacancies[1] == [2, 5]
+        assert vacancies[0] == [i+1 for i in range(10) if i+1 not in [2, 5]]
+
+        table = 'email_keys'
+        vacancies = dbk.find_vacancies(table, master_key)
+        assert vacancies[1] == []
+        assert vacancies[0] == [i+1 for i in range(10)]
+                
     
     def test_insert_key(self, dbk, master_key):
-        pass
+        key = dbs.Fernet.generate_key()
+        table = dbk.table_tuple[0]  # 'app_keys'
+        rowid = 5
+        # before
+        row_before = dbk.select_row_by_rowid(table, rowid)
+        dbk.insert_key(key, table, rowid, master_key)
+        # after
+        row_after = dbk.select_row_by_rowid(table, rowid)
+        assert row_after != row_before
+        # check the key and in_use
+        f = dbs.Fernet(master_key)
+        assert key == f.decrypt(row_after[1])
+        assert 'in_use' == f.decrypt(row_after[2].encode()).decode()
 
     def test_add_new_key(self, dbk, master_key):
-        pass
+        table = 'data_keys'
+        # before
+        rows_before = dbk.select_all(table)
+        rowid, key = dbk.add_new_key(table, master_key)
 
-    def test_decrypt_key(self, master_key):
-        pass
+        row_after = dbk.select_row_by_rowid(table, rowid)
+        assert rows_before[rowid-1] != row_after
+        # check the key and in_use
+        f = dbs.Fernet(master_key)
+        assert key == f.decrypt(row_after[1])
+        assert 'in_use' == f.decrypt(row_after[2].encode()).decode()
+
+    def test_decrypt_key(self, dbk, master_key):
+        key = dbs.Fernet.generate_key()
+        f = dbs.Fernet(master_key)
+        enc_key = f.encrypt(key)
+        assert key == dbk.decrypt_key(enc_key, master_key)
+    
+    def test_get_rows_and_keys(self, dbk, master_key):
+        table = 'app_keys'
+
+        # add one more
+        rowid = 2
+        key = b'QJp3y4CS5gPKIQIrZg1m3IzshLMGIamvoaPj9rvSctU='
+        dbk.insert_key(key, table, rowid, master_key)
+
+        rows_and_keys = dbk.get_rows_and_keys(table, master_key)
+        assert list(rows_and_keys.keys()) == [2, 5]
+        keys = list(rows_and_keys.values())
+        assert keys[0] == key
+        assert isinstance(keys[1], bytes)
 
 
 
