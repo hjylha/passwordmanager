@@ -7,8 +7,13 @@ import pytest
 
 import fix_imports
 import dbs
-from dbs import DB_auth
+from dbs import DB_auth, DB_keys, DB_password
 
+
+# master key
+@pytest.fixture
+def master_key():
+    return b'GJbXfxE9MjLNcVUlP3uYm3qziEJY6IJARBbWsu1Y8ac='
 
 # 'empty' db
 @pytest.fixture
@@ -25,12 +30,12 @@ def dba():
 # test key db
 @pytest.fixture
 def dbk():
-    return dbs.initiate_keys_db('test_keys.db')
+    return DB_keys('test_db_keys.db')
 
 # test password data db
 @pytest.fixture
 def dbp():
-    return dbs.initiate_password_db('test_pwd.db')
+    return DB_password('test_db_pwd.db')
 
 
 class TestDummydata():
@@ -163,7 +168,22 @@ class TestDBauth():
 
 
 class TestDBkeys():
-    pass
+
+    def test_find_vacancies(self, dbk, master_key):
+        for table in dbk.table_tuple:
+            vacancies = dbk.find_vacancies(table, master_key)
+            assert vacancies[1] == []
+            assert vacancies[0] == [i+1 for i in range(10)]
+    
+    def test_insert_key(self, dbk, master_key):
+        pass
+
+    def test_add_new_key(self, dbk, master_key):
+        pass
+
+    def test_decrypt_key(self, master_key):
+        pass
+
 
 
 class TestDBpassword():

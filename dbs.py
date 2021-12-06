@@ -128,12 +128,45 @@ class DB_auth(DB_general):
 
 
 class DB_keys(DB_general):
-    
-    def find_vacancy(self, table):
-        pass
 
-    def insert_key(self, key, table, rowid):
-        pass
+    def __init__(self, filepath_of_db) -> None:
+        super().__init__(filepath_of_db)
+        self.table_tuple = ('app_keys', 'email_keys', 'data_keys')
+        self.cols = ('key', 'in_use', 'date_modified')
+    
+    # find rows that are not in use (and also rows that are)
+    def find_vacancies(self, table, master_key):
+        vacant_rowids = []
+        in_use_rowids = []
+        f = Fernet(master_key)
+        all_data = self.select_all(table)
+        for row in all_data:
+            in_use = cs.try_decrypt_wo_exceptions(row[2].encode(), f)
+            if not in_use:
+                vacant_rowids.append(row[0])
+            elif in_use.decode() == 'in_use':
+                in_use_rowids.append(row[0])
+            else:
+                vacant_rowids.append(row[0])
+        return [vacant_rowids, in_use_rowids]
+
+    # insert key to table, change row status to in_use and add timestamp
+    def insert_key(self, key, table, rowid, master_key):
+        f = Fernet(master_key)
+        timestamp = str(int(time.time()))
+        data = (f.encrypt(key), f.encrypt('in_use'.encode()).decode(), f.encrypt(timestamp.encode()).decode())
+        self.update_by_rowid(table, self.cols, data, rowid)
+    
+    # generate new key and add it to table
+    def add_new_key(self, table, master_key):
+        available_rowids = self.find_vacancies(table, master_key)[0]
+        rowid = cs.secrets.choice(available_rowids)
+        key = Fernet.generate_key()
+        self.insert_key(key, table, rowid, master_key)
+
+    # get the actual key
+    def decrypt_key(self, encrypted_key, master_key):
+        return Fernet(master_key).decrypt(encrypted_key)
 
 
 class DB_password(DB_general):
