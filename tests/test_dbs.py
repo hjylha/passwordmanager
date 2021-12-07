@@ -32,17 +32,17 @@ def db():
 # test auth db
 @pytest.fixture
 def dba():
-    return DB_auth('test_db_auth.db')
+    return DB_auth(Path('test_db_auth.db'))
 
 # test key db
 @pytest.fixture
 def dbk():
-    return DB_keys('test_db_keys.db')
+    return DB_keys(Path('test_db_keys.db'))
 
 # test password data db
 @pytest.fixture
 def dbp():
-    return DB_password('test_db_pwd.db')
+    return DB_password(Path('test_db_pwd.db'))
 
 
 class TestDummydata():
@@ -176,26 +176,28 @@ class TestDBauth():
 
 class TestDBkeys():
 
-    def test_find_vacancies(self, dbk, master_key):
-        table = 'app_keys'
-        vacancies = dbk.find_vacancies(table, master_key)
-        # added keys to rowids 2 and 5
-        assert vacancies[1] == [2, 5]
-        assert vacancies[0] == [i+1 for i in range(10) if i+1 not in [2, 5]]
+    def test_reset_db_keys(self, dbk):
+        # should this check
+        if len(dbk.select_all(dbk.table_tuple[2])) > 100:
+            dbk.filepath.unlink()
+            dbs.initiate_db(dbk.filepath, 'keys')
+            assert len(dbk.select_all(dbk.table_tuple[0])) == 10
 
-        table = 'email_keys'
-        vacancies = dbk.find_vacancies(table, master_key)
-        assert vacancies[1] == []
-        assert vacancies[0] == [i+1 for i in range(10)]
+    def test_add_dummy_data(self, dbk):
+        num_before = len(dbk.select_all('email_keys'))
+        dbk.add_dummy_data(1, 1)
+        num_after = len(dbk.select_all('email_keys'))
+        assert num_after == num_before + 1
                 
     
     def test_insert_key(self, dbk, master_key):
         key = dbs.Fernet.generate_key()
-        table = dbk.table_tuple[0]  # 'app_keys'
+        table_num = 0  # 'app_keys'
+        table = dbk.table_tuple[table_num]
         rowid = 5
         # before
         row_before = dbk.select_row_by_rowid(table, rowid)
-        dbk.insert_key(key, table, rowid, master_key)
+        dbk.insert_key(key, table_num, rowid, master_key)
         # after
         row_after = dbk.select_row_by_rowid(table, rowid)
         assert row_after != row_before
@@ -205,13 +207,16 @@ class TestDBkeys():
         assert 'in_use' == f.decrypt(row_after[2].encode()).decode()
 
     def test_add_new_key(self, dbk, master_key):
-        table = 'data_keys'
+        # table = 'data_keys'
+        table_num = 2  # 'app_keys'
+        table = dbk.table_tuple[table_num]
         # before
         rows_before = dbk.select_all(table)
-        rowid, key = dbk.add_new_key(table, master_key)
+        rowid, key = dbk.add_new_key(table_num, master_key)
 
         row_after = dbk.select_row_by_rowid(table, rowid)
-        assert rows_before[rowid-1] != row_after
+        if rowid <= len(rows_before):
+            assert rows_before[rowid-1] != row_after
         # check the key and in_use
         f = dbs.Fernet(master_key)
         assert key == f.decrypt(row_after[1])
@@ -224,23 +229,49 @@ class TestDBkeys():
         assert key == dbk.decrypt_key(enc_key, master_key)
     
     def test_get_rows_and_keys(self, dbk, master_key):
-        table = 'app_keys'
+        # table = 'app_keys'
+        table_num = 0  # 'app_keys'
+        # table = dbk.table_tuple[table_num]
 
         # add one more
         rowid = 2
         key = b'QJp3y4CS5gPKIQIrZg1m3IzshLMGIamvoaPj9rvSctU='
-        dbk.insert_key(key, table, rowid, master_key)
+        dbk.insert_key(key, table_num, rowid, master_key)
 
-        rows_and_keys = dbk.get_rows_and_keys(table, master_key)
+        rows_and_keys = dbk.get_rows_and_keys(table_num, master_key)
         assert list(rows_and_keys.keys()) == [2, 5]
         keys = list(rows_and_keys.values())
         assert keys[0] == key
         assert isinstance(keys[1], bytes)
 
+    # this should be further up, but results depend on other tests
+    def test_find_vacancies(self, dbk, master_key):
+        table_num = 0  # 'app_keys'
+        vacancies = dbk.find_vacancies(table_num, master_key)
+        num_of_rows = len(dbk.select_all(dbk.table_tuple[table_num]))
+        # added keys to rowids 2 and 5
+        assert vacancies[1] == [2, 5]
+        assert vacancies[0] == [i+1 for i in range(num_of_rows) if i+1 not in [2, 5]]
+
+        table_num = 1  # 'email_keys'
+        vacancies = dbk.find_vacancies(table_num, master_key)
+        num_of_rows = len(dbk.select_all(dbk.table_tuple[table_num]))
+        assert vacancies[1] == []
+        assert vacancies[0] == [i+1 for i in range(num_of_rows)]
 
 
 class TestDBpassword():
     
+    def test_add_dummy_data(self, dbp):
+        data_type = 1
+        table = dbp.table_tuple[data_type]
+        rows_before = len(dbp.select_all(table))
+        dbp.add_dummy_data(data_type, 1)
+
+        rows_after = len(dbp.select_all(table))
+        assert rows_after == rows_before + 1
+        
+
     def test_insert_data(self, dbp, rows_and_keys):
         for rowid, key in rows_and_keys.items():
             row_and_key = (rowid, key)
@@ -301,7 +332,7 @@ class TestDBpassword():
         results = dbp.find(0, search_text, rows_and_keys)
         assert results == [(1, 'app1')]
 
-        search_text = 'mail3'
+        search_text = 'MaiL3'
         results = dbp.find(1, search_text, rows_and_keys)
         assert results == [(3, 'mail3@email.com')]
 

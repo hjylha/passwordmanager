@@ -134,11 +134,20 @@ class DB_keys(DB_general):
         self.table_tuple = ('app_keys', 'email_keys', 'data_keys')
         self.cols = ('key', 'in_use', 'date_modified')
     
+    # add more dummy data
+    def add_dummy_data(self, table_num, num_of_rows=10):
+        t_tuple = type_tuples['keys']
+        f = Fernet(Fernet.generate_key())
+        dummy_data = generate_dummy_data(t_tuple, num_of_rows, f)
+        table = self.table_tuple[table_num]
+        self.insert_many(table, self.tables[table].keys(), dummy_data)
+
     # find rows that are not in use (and also rows that are)
-    def find_vacancies(self, table, master_key):
+    def find_vacancies(self, table_num, master_key):
         vacant_rowids = []
         in_use_rowids = []
         f = Fernet(master_key)
+        table = self.table_tuple[table_num]
         all_data = self.select_all(table)
         for row in all_data:
             in_use = cs.try_decrypt_wo_exceptions(row[2].encode(), f)
@@ -150,21 +159,28 @@ class DB_keys(DB_general):
                 raise Exception(f'Questionable: {in_use.decode()=}')
                 print(in_use.decode())
                 vacant_rowids.append(row[0])
+        if len(vacant_rowids) < 3:
+            self.add_dummy_data()
+            start = max(*in_use_rowids, *vacant_rowids) + 1
+            vacant_rowids = vacant_rowids + [i for i in range(start, start+10)]
         return [vacant_rowids, in_use_rowids]
 
     # insert key to table, change row status to in_use and add timestamp
-    def insert_key(self, key, table, rowid, master_key):
+    def insert_key(self, key, table_num, rowid, master_key):
         f = Fernet(master_key)
         timestamp = str(int(time.time()))
         data = (f.encrypt(key), f.encrypt('in_use'.encode()).decode(), f.encrypt(timestamp.encode()).decode())
+        table = self.table_tuple[table_num]
         self.update_by_rowid(table, self.cols, data, rowid)
     
     # generate new key and add it to table
-    def add_new_key(self, table, master_key):
-        available_rowids = self.find_vacancies(table, master_key)[0]
+    def add_new_key(self, table_num, master_key):
+        # table = self.table_tuple[table_num]
+        available_rowids = self.find_vacancies(table_num, master_key)[0]
+        # print(available_rowids)
         rowid = cs.secrets.choice(available_rowids)
         key = Fernet.generate_key()
-        self.insert_key(key, table, rowid, master_key)
+        self.insert_key(key, table_num, rowid, master_key)
         return rowid, key
 
     # get the actual key
@@ -172,8 +188,9 @@ class DB_keys(DB_general):
         return Fernet(master_key).decrypt(encrypted_key)
     
     # return a dict with rowids as keys and (decrypted) keys as values
-    def get_rows_and_keys(self, table, master_key):
-        used_rowids = self.find_vacancies(table, master_key)[1]
+    def get_rows_and_keys(self, table_num, master_key):
+        table = self.table_tuple[table_num]
+        used_rowids = self.find_vacancies(table_num, master_key)[1]
         all_rows = self.select_all(table)
         rows_and_keys = dict()
         for row in all_rows:
@@ -187,6 +204,13 @@ class DB_password(DB_general):
     def __init__(self, filepath_of_db) -> None:
         super().__init__(filepath_of_db)
         self.table_tuple = ('apps', 'emails', 'data')
+    
+    def add_dummy_data(self, data_type, num_of_rows=10):
+        table = self.table_tuple[data_type]
+        f = Fernet(Fernet.generate_key())
+        t_tuple = type_tuples['password'][:len(self.tables[table].keys())]
+        dummy_data = generate_dummy_data(t_tuple, num_of_rows, f)
+        self.insert_many(table, self.tables[table].keys(), dummy_data)
 
     # get list of data_type (0 = apps or 1 = emails)
     def get_list(self, data_type, rows_and_keys):
@@ -211,7 +235,7 @@ class DB_password(DB_general):
             if row[0] in rows_and_keys:
                 f = Fernet(rows_and_keys[row[0]])
                 name = cs.decrypt_text(row[1], f)
-                if str_to_find in name:
+                if str_to_find.lower() in name.lower():
                     findings.append((row[0], name))
         return findings
 
