@@ -339,3 +339,20 @@ class TestDBpassword():
         search_text = 'nonsense'
         results = dbp.find(1, search_text, rows_and_keys)
         assert results == []
+    
+    def test_find_password(self, dbp, rows_and_keys):
+        # exception
+        data_type = 420
+        rowid_to_search = 69
+        with pytest.raises(Exception):
+            dbp.find_password(data_type, rowid_to_search, rows_and_keys)
+
+        data_type = 0
+        rowid_to_search = 1
+        result = dbp.find_password(data_type, rowid_to_search, rows_and_keys)
+        assert len(result) == 3
+
+        data_type = 1
+        rowid_to_search = 3
+        result = dbp.find_password(data_type, rowid_to_search, rows_and_keys)
+        assert len(result) == 3

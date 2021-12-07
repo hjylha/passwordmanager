@@ -239,11 +239,24 @@ class DB_password(DB_general):
                     findings.append((row[0], name))
         return findings
 
-    # def get_email_list(self, rows_and_keys):
-    #     pass
-
-    # def find_email(self, email, rows_and_keys):
-    #     pass
+    # find usernames and passwords related to app or email
+    def find_password(self, data_type, rowid, rows_and_keys):
+        if data_type not in (0, 1):
+            raise Exception(f'Invalid data type: {data_type=}')
+        all_data = self.select_all(self.table_tuple[-1])
+        findings = []
+        for row in all_data:
+            if row[0] in rows_and_keys:
+                f = Fernet(rows_and_keys[row[0]])
+                things_to_add = False
+                if not data_type and int(cs.decrypt_text(row[2], f)) == rowid:
+                    things_to_add = True
+                elif data_type and int(cs.decrypt_text(row[4], f)) == rowid:
+                    things_to_add = True
+                if things_to_add:
+                    decrypted_row = cs.decrypt_text_list(row[1:], f)
+                    findings.append(tuple([row[0]] + decrypted_row))
+        return findings
 
     # data_type: 0 = app, 1 = email or 2 = data
     def insert_data(self, data_type, data, row_and_key):
