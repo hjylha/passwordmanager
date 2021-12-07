@@ -184,8 +184,56 @@ class DB_keys(DB_general):
 
 class DB_password(DB_general):
 
-    def insert_data(self, data, fernet):
-        pass
+    def __init__(self, filepath_of_db) -> None:
+        super().__init__(filepath_of_db)
+        self.table_tuple = ('apps', 'emails', 'data')
+
+    # get list of data_type (0 = apps or 1 = emails)
+    def get_list(self, data_type, rows_and_keys):
+        if data_type not in (0, 1):
+            raise Exception(f'Invalid data type: {data_type=}')
+        all_data = self.select_all(self.table_tuple[data_type])
+        app_list = []
+        for row in all_data:
+            if row[0] in rows_and_keys:
+                f = Fernet(rows_and_keys[row[0]])
+                app_list.append(cs.decrypt_text(row[1], f))
+        # for rowid, key in rows_and_keys.items():
+        return app_list
+
+    # find app (data_type = 0) of email (1) containing str_to_find
+    def find(self, data_type, str_to_find, rows_and_keys):
+        if data_type not in (0, 1):
+            raise Exception(f'Invalid data type: {data_type=}')
+        all_data = self.select_all(self.table_tuple[data_type])
+        findings = []
+        for row in all_data:
+            if row[0] in rows_and_keys:
+                f = Fernet(rows_and_keys[row[0]])
+                name = cs.decrypt_text(row[1], f)
+                if str_to_find in name:
+                    findings.append((row[0], name))
+        return findings
+
+    # def get_email_list(self, rows_and_keys):
+    #     pass
+
+    # def find_email(self, email, rows_and_keys):
+    #     pass
+
+    # data_type: 0 = app, 1 = email or 2 = data
+    def insert_data(self, data_type, data, row_and_key):
+        # choose table based on data_type
+        try:
+            table = self.table_tuple[data_type]
+        except IndexError:
+            raise Exception(f'Invalid data type: {data_type=}')
+        # add timestamp, and encrypt
+        data = list(data) + [str(int(time.time()))]
+        f = Fernet(row_and_key[1])
+        encrypted_data = cs.encrypt_text_list(data, f)
+        columns = self.tables[table].keys()
+        self.update_by_rowid(table, columns, encrypted_data, row_and_key[0])
 
 
 

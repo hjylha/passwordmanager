@@ -15,6 +15,13 @@ from dbs import DB_auth, DB_keys, DB_password
 def master_key():
     return b'GJbXfxE9MjLNcVUlP3uYm3qziEJY6IJARBbWsu1Y8ac='
 
+# some rowids and keys
+@pytest.fixture
+def rows_and_keys():
+    return {1: b'LCXUP0NV1rBDawSLHy9soxhYA8Mo5dBR1-icCsMrq_Q=',
+            3: b'u6ztSn24XJDRQNZlEZdLJ2bpQeXuCq2vtanG-cjZvuc=',
+            6: b'7j0pRSoSV1AeDpddhNX9FdHuVWQtK5QkXHpnE7ePj3o='}
+
 # 'empty' db
 @pytest.fixture
 def db():
@@ -233,4 +240,71 @@ class TestDBkeys():
 
 
 class TestDBpassword():
-    pass
+    
+    def test_insert_data(self, dbp, rows_and_keys):
+        for rowid, key in rows_and_keys.items():
+            row_and_key = (rowid, key)
+            data = ['important data here', 'something']
+            # to check
+            f = dbs.Fernet(key)
+            # wrong data_type raises an exception
+            data_type = 'nonsense'
+            with pytest.raises(Exception):
+                dbp.insert_data(data_type, data, row_and_key)
+
+            row_before = dbp.select_row_by_rowid('apps', rowid)
+            data_type = 0
+            data = [f'app{rowid}', f'0000{rowid}']
+            dbp.insert_data(data_type, data, row_and_key)
+            row_after = dbp.select_row_by_rowid('apps', rowid)
+            assert row_before != row_after
+            for i, item in enumerate(data):
+                assert f.decrypt(row_after[i+1].encode()).decode() == item
+            # no errors with timestamp
+            int(f.decrypt(row_after[-1].encode()).decode())
+            
+            row_before = dbp.select_row_by_rowid('emails', rowid)
+            data_type = 1
+            data = [f'mail{rowid}@email.com', f'0000{rowid}']
+            dbp.insert_data(data_type, data, row_and_key)
+            row_after = dbp.select_row_by_rowid('emails', rowid)
+            assert row_before != row_after
+            for i, item in enumerate(data):
+                assert f.decrypt(row_after[i+1].encode()).decode() == item
+            # no errors with timestamp
+            int(f.decrypt(row_after[-1].encode()).decode())
+
+            row_before = dbp.select_row_by_rowid('data', rowid)
+            data_type = 2
+            data = ['username', '00001', 'password', '0000003', 'url']
+            dbp.insert_data(data_type, data, row_and_key)
+            row_after = dbp.select_row_by_rowid('data', rowid)
+            assert row_before != row_after
+            for i, item in enumerate(data):
+                assert f.decrypt(row_after[i+1].encode()).decode() == item
+            # no errors with timestamp
+            int(f.decrypt(row_after[-1].encode()).decode())
+
+    def test_get_list(self, dbp, rows_and_keys):
+        app_list = dbp.get_list(0, rows_and_keys)
+        assert app_list == ['app1', 'app3', 'app6']
+
+        app_list = dbp.get_list(1, rows_and_keys)
+        assert app_list == ['mail1@email.com', 'mail3@email.com', 'mail6@email.com']
+
+    def test_find(self, dbp, rows_and_keys):
+        search_text = 'app'
+        results = dbp.find(0, search_text, rows_and_keys)
+        assert results == [(1, 'app1'), (3, 'app3'), (6, 'app6')]
+
+        search_text = '1'
+        results = dbp.find(0, search_text, rows_and_keys)
+        assert results == [(1, 'app1')]
+
+        search_text = 'mail3'
+        results = dbp.find(1, search_text, rows_and_keys)
+        assert results == [(3, 'mail3@email.com')]
+
+        search_text = 'nonsense'
+        results = dbp.find(1, search_text, rows_and_keys)
+        assert results == []
