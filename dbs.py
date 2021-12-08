@@ -57,6 +57,10 @@ def initiate_db(filepath, db_type, num_of_dummy_inserts=10):
         dummy_data = generate_dummy_data(t_tuple, num_of_dummy_inserts, f, ph)
         db.insert_many(table, column_data.keys(), dummy_data)
     return db
+
+
+class PasswordNotFoundError(Exception):
+    pass
     
 
 class DB_auth(DB_general):
@@ -103,7 +107,7 @@ class DB_auth(DB_general):
         if len(search_results) > 1:
             raise Exception('This password is in the database more than once.')
         if not search_results:
-            raise Exception('Given password not in database.')
+            raise PasswordNotFoundError('Given password not in database.')
         
     # add password and hash it; generate key and time, and encrypt them
     def add_password(self, password, salt):

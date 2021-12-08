@@ -1,8 +1,9 @@
 from pathlib import Path
 import string
 import os
-from cryptography.fernet import Fernet
+import sqlite3
 
+from cryptography.fernet import Fernet
 import pytest
 
 import fix_imports
@@ -108,16 +109,18 @@ class TestInitiation():
         assert len(dba.select_all('auth')) == 10
 
     def test_initiate_keys_db(self, db):
-        dbk = dbs.initiate_db(db.filepath, 'keys')
-        assert len(dbk.select_all('app_keys')) == 10
-        assert len(dbk.select_all('email_keys')) == 10
-        assert len(dbk.select_all('data_keys')) == 10
+        num = 20
+        dbk = dbs.initiate_db(db.filepath, 'keys', num)
+        assert len(dbk.select_all('app_keys')) == num
+        assert len(dbk.select_all('email_keys')) == num
+        assert len(dbk.select_all('data_keys')) == num
 
     def test_initiate_password_db(self, db):
-        dbp = dbs.initiate_db(db.filepath, 'password')
-        assert len(dbp.select_all('apps')) == 10
-        assert len(dbp.select_all('emails')) == 10
-        assert len(dbp.select_all('data')) == 10
+        num = 20
+        dbp = dbs.initiate_db(db.filepath, 'password', num)
+        assert len(dbp.select_all('apps')) == num
+        assert len(dbp.select_all('emails')) == num
+        assert len(dbp.select_all('data')) == num
     
     def test_initiate_db_fail(self, db):
         with pytest.raises(Exception):
@@ -131,9 +134,14 @@ class TestDBauth():
         # it is extremely unlikely that e_key is among keys
         assert not dba.is_key_in_keys(e_key)
 
-        # this should be in keys
-        e_key = b'gAAAAABhrgu_1yd1dxYsD7DNk36vqwbmzwF6zAaBMbbD2Oyh5NDGGPUBvZ37fOQjH_ZhfOLGV-tTUkbNSj2wKBsjdKbctheo1UeiGvFDLRdN7yFrRs_rre08WU4XF0Pky76ZZ8OkN6b_'
-        assert dba.is_key_in_keys(e_key)
+        # see what is in master key column
+        conn = sqlite3.connect('test_db_auth.db')
+        cur = conn.cursor()
+        cur.execute('SELECT master_key FROM auth')
+        keys = cur.fetchall()
+        # they are all in keys
+        for key in keys:
+            assert dba.is_key_in_keys(key[0])
 
     def test_check_uniqueness_of_keys(self, dba):
         # it is extremely unlikely that there would be two same encrypted keys
@@ -142,7 +150,9 @@ class TestDBauth():
     # test add and check password
     def test_add_password(self, dba):
         data0 = dba.select_all(dba.table)
+        # it is extremely unlikely that generated password is already in db
         password = dbs.cs.generate_password()
+        # password = 'g00d p4ssw0rd'
         salt = b'SBHe5zI8OkN94rsVHSZE3dwAvimz-ukl11ONcJgEAbo='
         dba.add_password(password, salt)
 
@@ -154,24 +164,27 @@ class TestDBauth():
         e_key = dba.check_password(password)
         assert dba.is_key_in_keys(e_key)
 
-    # def test_check_password(self, dba):
-    #     password = 'g00d p4ssw0rd'
-    #     salt = b'SBHe5zI8OkN94rsVHSZE3dwAvimz-ukl11ONcJgEAbo='
-    #     dba.add_password(password, salt)
-
-    def test_decrypt_key(self, dba):
+    def test_check_password(self, dba):
         password = 'g00d p4ssw0rd'
         salt = b'SBHe5zI8OkN94rsVHSZE3dwAvimz-ukl11ONcJgEAbo='
-        rowid = 5
+        # add this password twice to get error
+        dba.add_password(password, salt)
+        dba.add_password(password, salt)
+        with pytest.raises(Exception):
+            dba.check_password(password)
+
+        password = 'not here'
+        with pytest.raises(dbs.PasswordNotFoundError):
+            dba.check_password(password)
+
+    def test_decrypt_key(self, dba):
+        password = dbs.cs.generate_password()
+        # salt = b'SBHe5zI8OkN94rsVHSZE3dwAvimz-ukl11ONcJgEAbo='
+        salt = os.urandom(16)
         f = dbs.cs.do_crypto_stuff(password, salt, 200_000)
         key = dbs.Fernet.generate_key()
         encrypted_key = f.encrypt(key)
-        dba.update_by_rowid(dba.table, (dba.cols[1],), (encrypted_key,), rowid)
-
-        # check that we can decrypt the key
-        row = dba.select_row_by_rowid(dba.table, rowid)
-        # assert row[2] == encrypted_key
-        assert dba.decrypt_key(row[2], password, salt) == key
+        assert dba.decrypt_key(encrypted_key, password, salt) == key
 
 
 class TestDBkeys():
