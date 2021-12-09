@@ -109,19 +109,21 @@ class DB_auth(DB_general):
         if not search_results:
             raise PasswordNotFoundError('Given password not in database.')
         
-    # add password and hash it; generate key and time, and encrypt them
-    def add_password(self, password, salt):
+    # add password and hash it; generate key if necessary; add time, and encrypt them
+    def add_password(self, password, salt, master_key=None, rowid=None):
         # from pm_data import salt_thingie
         ph = cs.PasswordHasher()
         hash = ph.hash(password)
         f = cs.do_crypto_stuff(password, salt, 200_000)
         while True:
-            master_key = Fernet.generate_key()
+            if not master_key:
+                master_key = Fernet.generate_key()
             encrypted_master_key = f.encrypt(master_key)
             if not self.is_key_in_keys(encrypted_master_key):
                 encrypted_time = cs.encrypt_text(str(int(time.time())), f)
                 datarow = (hash, encrypted_master_key, encrypted_time)
-                rowid = cs.secrets.randbelow(self.length) + 1
+                if not rowid:
+                    rowid = cs.secrets.randbelow(self.length) + 1
                 self.update_by_rowid(self.table, self.cols, datarow, rowid)
                 break
     

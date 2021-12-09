@@ -2,14 +2,20 @@ from pathlib import Path
 import string
 import os
 import sqlite3
+import time
 
-from cryptography.fernet import Fernet
+# from cryptography.fernet import Fernet
 import pytest
 
 import fix_imports
 import dbs
 from dbs import DB_auth, DB_keys, DB_password
 
+
+# salt
+@pytest.fixture
+def salt():
+    return b'SBHe5zI8OkN94rsVHSZE3dwAvimz-ukl11ONcJgEAbo='
 
 # master key
 @pytest.fixture
@@ -146,37 +152,8 @@ class TestDBauth():
     def test_check_uniqueness_of_keys(self, dba):
         # it is extremely unlikely that there would be two same encrypted keys
         assert dba.check_uniqueness_of_keys()
-
-    # test add and check password
-    def test_add_password(self, dba):
-        data0 = dba.select_all(dba.table)
-        # it is extremely unlikely that generated password is already in db
-        password = dbs.cs.generate_password()
-        # password = 'g00d p4ssw0rd'
-        salt = b'SBHe5zI8OkN94rsVHSZE3dwAvimz-ukl11ONcJgEAbo='
-        dba.add_password(password, salt)
-
-        # something should have changed
-        data = dba.select_all(dba.table)
-        assert any(row0 != row for row0, row in zip(data0, data))
-
-        # this key should be in keys
-        e_key = dba.check_password(password)
-        assert dba.is_key_in_keys(e_key)
-
-    def test_check_password(self, dba):
-        password = 'g00d p4ssw0rd'
-        salt = b'SBHe5zI8OkN94rsVHSZE3dwAvimz-ukl11ONcJgEAbo='
-        # add this password twice to get error
-        dba.add_password(password, salt)
-        dba.add_password(password, salt)
-        with pytest.raises(Exception):
-            dba.check_password(password)
-
-        password = 'not here'
-        with pytest.raises(dbs.PasswordNotFoundError):
-            dba.check_password(password)
-
+    
+    # this doesn't really have much to do with db
     def test_decrypt_key(self, dba):
         password = dbs.cs.generate_password()
         # salt = b'SBHe5zI8OkN94rsVHSZE3dwAvimz-ukl11ONcJgEAbo='
@@ -185,6 +162,52 @@ class TestDBauth():
         key = dbs.Fernet.generate_key()
         encrypted_key = f.encrypt(key)
         assert dba.decrypt_key(encrypted_key, password, salt) == key
+
+    # testing add and check password are connected
+    def test_add_password(self, dba, salt):
+        data0 = dba.select_all(dba.table)
+        password = 'testing'
+        key = b'SlLYcsRiBK2mR0LbuX6oUy_CbHXnkmo-xbtSwY7Po68='
+        rowid = 2
+        dba.add_password(password, salt, key, rowid)
+        # rowids stayed the same, but otherwise things changed
+        row2 = dba.select_row_by_rowid(dba.table, rowid)
+        assert row2[0] == data0[1][0]
+        assert all(item != item0 for item, item0 in zip(row2[1:], data0[1][1:]))
+        # maybe we can decrypt things
+        assert dba.decrypt_key(row2[2], password, salt) == key
+        # this should be quite quick 
+        time_in_db = dba.decrypt_key(row2[3].encode(), password, salt).decode()
+        assert int(time.time()) - int(time_in_db) < 2
+        # also check check_password here as well
+        assert row2[2] == dba.check_password(password)
+
+        # it is extremely unlikely that generated password is already in db
+        password = dbs.cs.generate_password()
+        # password = 'g00d p4ssw0rd'
+        dba.add_password(password, salt)
+        # this key should be in keys
+        e_key = dba.check_password(password)
+        assert dba.is_key_in_keys(e_key)
+
+    def test_check_password(self, dba, salt):
+        password = dbs.cs.generate_password()
+        # salt = b'SBHe5zI8OkN94rsVHSZE3dwAvimz-ukl11ONcJgEAbo='
+        key = b'f5djulfNmLjh8_Jdrj40_u_2dA-U_tjyWOb90ThyHOI='
+        dba.add_password(password, salt, key)
+        encrypted_key = dba.check_password(password)
+        assert dba.decrypt_key(encrypted_key, password, salt) == key
+
+        # add this password twice to get error
+        password = 'g00d p4ssw0rd'
+        dba.add_password(password, salt)
+        dba.add_password(password, salt)
+        with pytest.raises(Exception):
+            dba.check_password(password)
+
+        password = 'not here'
+        with pytest.raises(dbs.PasswordNotFoundError):
+            dba.check_password(password)
 
 
 class TestDBkeys():
