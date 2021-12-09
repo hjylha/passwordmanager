@@ -169,12 +169,13 @@ class TestDBauth():
         password = 'testing'
         key = b'SlLYcsRiBK2mR0LbuX6oUy_CbHXnkmo-xbtSwY7Po68='
         rowid = 2
-        dba.add_password(password, salt, key, rowid)
+        master_key = dba.add_password(password, salt, key, rowid)
         # rowids stayed the same, but otherwise things changed
         row2 = dba.select_row_by_rowid(dba.table, rowid)
         assert row2[0] == data0[1][0]
         assert all(item != item0 for item, item0 in zip(row2[1:], data0[1][1:]))
         # maybe we can decrypt things
+        assert master_key == key
         assert dba.decrypt_key(row2[2], password, salt) == key
         # this should be quite quick 
         time_in_db = dba.decrypt_key(row2[3].encode(), password, salt).decode()

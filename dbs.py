@@ -110,6 +110,7 @@ class DB_auth(DB_general):
             raise PasswordNotFoundError('Given password not in database.')
         
     # add password and hash it; generate key if necessary; add time, and encrypt them
+    # return master key
     def add_password(self, password, salt, master_key=None, rowid=None):
         # from pm_data import salt_thingie
         ph = cs.PasswordHasher()
@@ -126,6 +127,7 @@ class DB_auth(DB_general):
                     rowid = cs.secrets.randbelow(self.length) + 1
                 self.update_by_rowid(self.table, self.cols, datarow, rowid)
                 break
+        return master_key
     
     # get the actual master key
     def decrypt_key(self, encrypted_key, password, salt):
