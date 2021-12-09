@@ -1,53 +1,53 @@
 import sqlite3
+# from sqlite3.dbapi2 import Connection, Cursor
+from typing import Iterable, Iterator, Optional
 # from db_ini import get_column_names_for_table, get_columns_for_table
 
 # a very not safe way to create SQL commands
 # CREATE TABLE table_name (column type etc, column type);
-def create_table_command(table_name, column_data):
+def create_table_command(table_name: str, column_data: dict[str, tuple[str]]) -> str:
     columns_and_types = [f'{key} {" ".join(value)}' for key, value in column_data.items()]
     return f'CREATE TABLE {table_name} ({", ".join(columns_and_types)});'
 
 
 # INSERT INTO table_name (column1, column2, ...) VALUES (? , ?, ...);
-def insert_into_command(table_name, columns):
+def insert_into_command(table_name: str, columns: Iterator[str]) -> str:
     return f'INSERT INTO {table_name} ({", ".join(columns)}) VALUES ({", ".join(["?" for _ in columns])});'
 
 
 # UPDATE table_name SET columns[0] = ?, columns[1] = ?, ... WHERE rowid = ?;
-def update_command_w_rowid(table_name, columns):
+def update_command_w_rowid(table_name: str, columns: Iterator[str]) -> str:
     equalities = [f'{column} = ?' for column in columns]
     return f'UPDATE {table_name} SET {", ".join(equalities)} WHERE rowid = ?;'
 
 # UPDATE table_name SET columns[0] = ?, columns[1] = ?, ... WHERE columns2[0] = ? AND columns2[1] = ? ...;
-def update_command_w_where(table_name, columns_to_update, columns_w_condition):
+def update_command_w_where(table_name: str, columns_to_update: Iterator[str], columns_w_condition: Iterator[str]) -> str:
     equalities1 = [f'{column} = ?' for column in columns_to_update]
     equalities2 = [f'{column} = ?' for column in columns_w_condition]
     return f'UPDATE {table_name} SET {", ".join(equalities1)} WHERE {" AND ".join(equalities2)};'
 
 
 # SELECT columns[0], columns[1], ... FROM table_name;
-def select_column_command(table_name, columns):
+def select_column_command(table_name: str, columns: Iterator[str]) -> str:
     return f'SELECT {", ".join(columns)} FROM {table_name};'
 
 # SELECT columns1 FROM table_name WHERE columns[0] = ? AND columns[1] = ?, ...;
-def select_columns_where_command(table_name, columns, columns_w_condition):
+def select_columns_where_command(table_name: str, columns: Iterator[str], columns_w_condition: Iterator[str]) -> str:
     conditions = [f'{column} = ?' for column in columns_w_condition]
     return f'SELECT {", ".join(columns)} FROM {table_name} WHERE {" AND ".join(conditions)};'
 
 
 # database class
-class DB_general:
+class DB_general():
     # db should have a table of tables
-    master_table_name = 'tables'
-    master_table_columns = {'table_name': ('TEXT', 'NOT NULL', 'UNIQUE'), 
+    master_table_name: str = 'tables'
+    master_table_columns : dict[str, tuple[str]] = {'table_name': ('TEXT', 'NOT NULL', 'UNIQUE'), 
                             'column_data': ('TEXT', 'NOT NULL')}
-    master_table_column_names = ('table_name', 'column_data')
-    # master_table_columns = get_columns_for_table(master_table_name)
-    # master_table_column_names = get_column_names_for_table(master_table_name)
+    master_table_column_names: tuple[str] = ('table_name', 'column_data')
     
     # how to read column data from master table
     @staticmethod
-    def string_to_column_data(col_data_as_string : str) -> dict:
+    def string_to_column_data(col_data_as_string : str) -> dict[str, tuple[str]]:
         column_data = dict()
         text = col_data_as_string
         while text != '':
@@ -78,19 +78,19 @@ class DB_general:
 
     # how to store column data in master table
     @staticmethod
-    def column_data_as_string(column_data: dict) -> str:
+    def column_data_as_string(column_data: dict[str, tuple[str]]) -> str:
         list_of_items = [f'({column}, ({", ".join(value)}))' for column, value in column_data.items()]
         return ', '.join(list_of_items)
 
     # just to make sure columns and data line up
     @staticmethod
-    def prepare_to_add_to_master_table(table_name: str, column_dict: dict) -> tuple:
+    def prepare_to_add_to_master_table(table_name: str, column_dict: dict[str, tuple[str]]) -> tuple[tuple[str, str], tuple[str, str]]:
         columns = ('table_name', 'column_data')
         data = (table_name, DB_general.column_data_as_string(column_dict))
         return (columns, data)
     
     @staticmethod
-    def table_row_as_dict(row: tuple, columns: tuple) -> dict:
+    def table_row_as_dict(row: Iterable, columns: Iterable) -> dict:
         return {col: item for item, col in zip(row, columns)}
 
 
@@ -106,13 +106,13 @@ class DB_general:
         
 
     # connect to database
-    def connect(self):
+    def connect(self) -> tuple[sqlite3.Connection, sqlite3.Cursor]:
         conn = sqlite3.connect(self.filepath)
         cur = conn.cursor()
         return conn, cur
 
     # get everything in specific columns
-    def select_columns(self, table_name, columns):
+    def select_columns(self, table_name: str, columns: Iterable[str]) -> list[tuple]:
         conn, cur = self.connect()
         with conn:
             command = select_column_command(table_name, columns)
@@ -126,7 +126,7 @@ class DB_general:
         return data
 
     # select columns with equality condition on some (possibly other) columns
-    def select_columns_by_column_value(self, table_name, columns, column_condition, condition_value):
+    def select_columns_by_column_value(self, table_name: str, columns: Iterable[str], column_condition: Iterable[str], condition_value: Iterable) -> list[tuple]:
         conn, cur = self.connect()
         with conn:
             command = select_columns_where_command(table_name, columns, column_condition)
@@ -141,7 +141,7 @@ class DB_general:
         return data
 
     # insert data to specific columns
-    def insert(self, table_name, columns, data):
+    def insert(self, table_name: str, columns: Iterable[str], data: Iterable):
         conn = self.connect()[0]
         with conn:
             command = insert_into_command(table_name, columns)
@@ -152,7 +152,7 @@ class DB_general:
         conn.close()
 
     # insert many rows of data
-    def insert_many(self, table_name, columns, datalist):
+    def insert_many(self, table_name: str, columns: Iterable, datalist: Iterable[Iterable]) -> None:
         conn = self.connect()[0]
         with conn:
             command = insert_into_command(table_name, columns)
@@ -164,7 +164,7 @@ class DB_general:
 
     # create a new table
     # column_data as a dict with column name as key, type etc as value (tuple/list)
-    def create_table(self, table_name, column_data):
+    def create_table(self, table_name: str, column_data: dict[str, tuple[str]]) -> None:
         if column_data is None:
             return
         # check if table already exists
@@ -203,7 +203,7 @@ class DB_general:
         # self.tables[table_name] = column_data
 
     # remove a table from db
-    def drop_table(self, table_name):
+    def drop_table(self, table_name: str) -> None :
         conn, cur = self.connect()
         with conn:
             cur.execute(f'DROP TABLE {table_name};')
@@ -213,7 +213,7 @@ class DB_general:
         conn.close()
         
     # get info on all the tables in the database
-    def get_table_data(self):
+    def get_table_data(self) -> dict[str, dict[str, tuple[str]]]:
         raw_table_data = self.select_columns(DB_general.master_table_name, DB_general.master_table_column_names)
         table_data = None
         if raw_table_data is not None:
@@ -223,7 +223,7 @@ class DB_general:
         return table_data
 
     # update data in specific columns in a row given by rowid
-    def update_by_rowid(self, table_name, columns, new_data, rowid):
+    def update_by_rowid(self, table_name: str, columns: Iterable[str], new_data: Iterable, rowid: int) -> None:
         conn = self.connect()[0]
         with conn:
             command = update_command_w_rowid(table_name, columns)
@@ -233,7 +233,7 @@ class DB_general:
         conn.close()
     
     # update data with condition on some columns
-    def update_by_column_value(self, table_name, columns, new_data, columns_w_condition, condition):
+    def update_by_column_value(self, table_name: str, columns: Iterable[str], new_data: Iterable, columns_w_condition: Iterable[str], condition: Iterable) -> None:
         conn = self.connect()[0]
         with conn:
             command = update_command_w_where(table_name, columns, columns_w_condition)
@@ -242,7 +242,7 @@ class DB_general:
         conn.close()
 
     # hopefully columns are in the correct order here
-    def insert_and_create_table_if_needed(self, table_name, column_data, data):
+    def insert_and_create_table_if_needed(self, table_name: str, column_data: dict[str, tuple[str]], data: Iterable):
         try:
             self.insert(table_name, column_data.keys(), data)
         except sqlite3.OperationalError:
@@ -250,7 +250,7 @@ class DB_general:
             self.insert(table_name, column_data.keys(), data)
 
     # get info on rows with column = value
-    def select_rows_by_column_value(self, table_name, column, value):
+    def select_rows_by_column_value(self, table_name: str, column: str, value) -> Optional[list[tuple]]:
         conn, cur = self.connect()
         with conn:
             command = f'SELECT rowid, * FROM {table_name} WHERE {column} = ?;'
@@ -264,7 +264,7 @@ class DB_general:
         conn.close()
         return rows
 
-    def select_rows_by_text_wo_capitalization(self, table_name, column, text):
+    def select_rows_by_text_wo_capitalization(self, table_name: str, column: str, text: str) -> list[tuple]:
         conn, cur = self.connect()
         with conn:
             command = f'SELECT rowid, * FROM {table_name} WHERE {column} LIKE ?;'
@@ -275,12 +275,12 @@ class DB_general:
         return rows
     
     # get info on row with specific rowid
-    def select_row_by_rowid(self, table_name, rowid):
+    def select_row_by_rowid(self, table_name: str, rowid: int) -> tuple:
         rows = self.select_rows_by_column_value(table_name, 'rowid', rowid)
         return rows[0]
 
     # get everything from a table
-    def select_all(self, table_name):
+    def select_all(self, table_name: str) -> Optional[list[tuple]]:
         conn, cur = self.connect()
         with conn:
             try:
@@ -293,20 +293,20 @@ class DB_general:
         return all_things
     
     # get everything in tables referenced in self.tables
-    def get_everything(self):
+    def get_everything(self) -> dict[str, list[tuple]]:
         everything = dict()
         for table in self.tables:
             everything[table] = self.select_all(table)
         return everything
 
     # create all the tables according to self.tables
-    def create_tables(self):
+    def create_tables(self) -> None:
         for table, columns in self.tables.items():
             self.create_table(table, columns)
     
     # Maybe some more interesting fcns
     # create a csv file containing the data in a table
-    def create_csv_file(self, table_name, csv_filename, mode='a'):
+    def create_csv_file(self, table_name: str, csv_filename, mode: str ='a') -> None:
         # table_contents = []
         # column_data = self.tables[table_name]
         columns = list(self.tables[table_name].keys())
@@ -323,7 +323,7 @@ class DB_general:
                 file.write(f'{",".join(line)};\n')
 
     # backup db to another file
-    def backup_db(self, backup_db):
+    def backup_db(self, backup_db) -> None:
         # backup_db = DB_general(new_filename)
         everything = self.get_table_data()
         for table, col_data in everything.items():

@@ -5,7 +5,8 @@ import pytest
 
 import fix_imports
 import dbs
-from pm_class import PM, DB_auth, DB_keys, DB_password, PasswordNotFoundError
+from dbs import DB_auth, DB_keys, DB_password
+from pm_class import PM
 
 
 # get some dummy app names and email addresses

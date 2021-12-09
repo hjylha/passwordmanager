@@ -1,11 +1,10 @@
 
 import dbs
 from dbs import PasswordNotFoundError, DB_auth, DB_keys, DB_password
-from tests.test_dbs import rows_and_keys
 
 
 class PM():
-    def __init__(self, db_auth, db_keys, db_data):
+    def __init__(self, db_auth: DB_auth, db_keys: DB_keys, db_data: DB_password) -> None:
         self.dba = db_auth
         self.dbk = db_keys
         self.dbp = db_data
@@ -13,21 +12,21 @@ class PM():
         self.master_key = None
     
     # get salt (from somewhere in the files...)
-    def get_salt(self):
+    def get_salt(self) -> bytes:
         # TODO: all of these salt things
         return b'\xc1\x95\xe15=\tm\xef\xecTH\x8e\xf5;/l'
 
     # generate salt (and put it in some file)
-    def generate_salt(self):
+    def generate_salt(self) -> None:
         pass
 
     # add password (and generate master key) the first time
-    def add_master_password(self, password):
+    def add_master_password(self, password: str) -> None:
         self.master_key = self.dba.add_password(password, self.get_salt())
         # self.master_key = self.dba.decrypt_key(encrypted_m_key, password, self.get_salt())
     
     # check that password is in db, and get master key
-    def check_master_password(self, password):
+    def check_master_password(self, password: str) -> bool:
         try:
             encrypted_m_key = self.dba.check_password(password)
             self.master_key = self.dba.decrypt_key(encrypted_m_key, password, self.get_salt())
@@ -38,7 +37,7 @@ class PM():
             return False
         
     # change the password (and change master key, optionally)
-    def change_master_password(self, old_password, new_password, change_master_key=True):
+    def change_master_password(self, old_password: str, new_password: str, change_master_key: bool =True) -> None:
         rowid, e_master_key = self.dba.check_password(old_password, True)
         master_key = None
         if not change_master_key:
@@ -49,7 +48,7 @@ class PM():
     
     # into the real business
     # app_or_email = 0 for app, 1 for email
-    def find_info(self, app_or_email, name):
+    def find_info(self, app_or_email: int, name: str) -> list[tuple[int, str]]:
         if not self.master_key:
             raise Exception('Master key not active')
         # get in-use rows and corresponding keys
@@ -58,7 +57,7 @@ class PM():
         return self.dbp.find(app_or_email, name, rows_and_keys)
 
     # app_or_email = 0 for app, 1 for email
-    def add_info(self, app_or_email, name):
+    def add_info(self, app_or_email: int, name: str) -> bool:
         if not self.master_key:
             raise Exception('Master key not active')
         # check if name is already in db (not sure if this should be part of UI)
@@ -67,24 +66,17 @@ class PM():
             return False
         # if name is not in db, add it
         row_and_key = self.dbk.add_new_key(app_or_email, self.master_key)
-        
-        # try:
         self.dbp.insert_data(app_or_email, (name, str(0)), row_and_key)
-        # except Exception as exc:
-        #     print('Exception', exc)
-        #     print('This should be 2:', len(row_and_key))
-        #     print('rowid:', row_and_key[0])
-        #     print('key:', row_and_key[1])
         return True
 
-    # check that no invalid tokens exist
+    # TODO: check that no invalid tokens exist
     def check_keys(self):
         if not self.master_key:
             raise Exception('Master key not active')
         pass
 
     # get the possible rowids for app and email
-    def prepare_to_add_password(self, app: str, email: str) -> list:
+    def prepare_to_add_password(self, app: str, email: str) -> list[tuple[int, str]]:
         findings = {app: self.find_info(0, app)}
         findings[email] = self.find_info(1, email)
         return findings
@@ -101,7 +93,7 @@ class PM():
         data = (username, email, password, app, url)
         self.dbp.insert_data(2, data, row_and_key)
 
-    def find_password(self, app: str) -> list:
+    def find_password(self, app: str) -> list[tuple[int, str, int, str, int, str]]:
         if not self.master_key:
             raise Exception('Master key not active')
         app_info = self.find_info(0, app)
@@ -115,13 +107,13 @@ class PM():
         return password_info
 
     # changing and removing password depends on the rowid
-    def change_password(self, rowid, new_password):
+    def change_password(self, rowid: int, new_password: str) -> None:
         if not self.master_key:
             raise Exception('Master key not active')
         row_and_key = (rowid, self.dbk.get_rows_and_keys(2, self.master_key)[rowid])
         self.dbp.change_password(new_password, row_and_key)
 
-    def delete_password(self, rowid):
+    def delete_password(self, rowid: int) -> None:
         if not self.master_key:
             raise Exception('Master key not active')
         # overwrite the row

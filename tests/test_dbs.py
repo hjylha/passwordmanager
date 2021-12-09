@@ -263,7 +263,7 @@ class TestDBkeys():
     def test_remove_key(self, dbk, master_key):
         table_num = 0
         rowid = 5
-        dbk.remove_key(table_num, rowid, master_key)
+        dbk.remove_key(table_num, rowid)
         # row should not be in use anymore
         assert rowid not in dbk.find_vacancies(table_num, master_key)[1]
         # add it back

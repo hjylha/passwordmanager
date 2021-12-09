@@ -6,56 +6,53 @@ import db_general
 from db_general import DB_general
 
 
-# testing fcns creating sql commands
-
-def test_create_table_command():
-    table = 'Table_Name'
-    column_data = {'column1': ('TEXT', 'UNIQUE'), 'column2': ('INTEGER', 'NOT NULL')}
-    command = 'CREATE TABLE Table_Name (column1 TEXT UNIQUE, column2 INTEGER NOT NULL);'
-    assert db_general.create_table_command(table, column_data) == command
-
-
-def test_insert_into_command():
-    table = 'Table_Name'
-    columns = ('column1', 'column2', 'column3')
-    command = 'INSERT INTO Table_Name (column1, column2, column3) VALUES (?, ?, ?);'
-    assert db_general.insert_into_command(table, columns) == command
-
-
-def test_update_command_w_rowid():
-    table = 'Table_Name'
-    columns = ('column1', 'column2')
-    command = 'UPDATE Table_Name SET column1 = ?, column2 = ? WHERE rowid = ?;'
-    assert db_general.update_command_w_rowid(table, columns) == command
-
-def test_update_command_w_where():
-    table = 'Table_Name'
-    columns = ('column1', 'column2')
-    columns_w_condition = ('rowid', 'column1')
-    command = 'UPDATE Table_Name SET column1 = ?, column2 = ? WHERE rowid = ? AND column1 = ?;'
-    assert db_general.update_command_w_where(table, columns, columns_w_condition) == command
-
-
-def test_select_column_command():
-    table = 'Table_Name'
-    columns = ('column1', 'column2')
-    command = 'SELECT column1, column2 FROM Table_Name;'
-    assert db_general.select_column_command(table, columns) == command
-
-def test_select_columns_where_command():
-    table = 'Table_Name'
-    columns = ('column1', 'column2')
-    columns_w_cond = ('column3', 'column4', 'column5')
-    command = 'SELECT column1, column2 FROM Table_Name WHERE column3 = ? AND column4 = ? AND column5 = ?;'
-    assert db_general.select_columns_where_command(table, columns, columns_w_cond) == command
-
-
-# testing DG_general
+# DB_general for testing
 @pytest.fixture
 def db():
     db_path = Path('test_db.db')
     yield DB_general(db_path)
     db_path.unlink()
+
+
+# testing fcns creating sql commands
+class TestCommands():
+    def test_create_table_command(self):
+        table = 'Table_Name'
+        column_data = {'column1': ('TEXT', 'UNIQUE'), 'column2': ('INTEGER', 'NOT NULL')}
+        command = 'CREATE TABLE Table_Name (column1 TEXT UNIQUE, column2 INTEGER NOT NULL);'
+        assert db_general.create_table_command(table, column_data) == command
+
+    def test_insert_into_command(self):
+        table = 'Table_Name'
+        columns = ('column1', 'column2', 'column3')
+        command = 'INSERT INTO Table_Name (column1, column2, column3) VALUES (?, ?, ?);'
+        assert db_general.insert_into_command(table, columns) == command
+
+    def test_update_command_w_rowid(self):
+        table = 'Table_Name'
+        columns = ('column1', 'column2')
+        command = 'UPDATE Table_Name SET column1 = ?, column2 = ? WHERE rowid = ?;'
+        assert db_general.update_command_w_rowid(table, columns) == command
+
+    def test_update_command_w_where(self):
+        table = 'Table_Name'
+        columns = ('column1', 'column2')
+        columns_w_condition = ('rowid', 'column1')
+        command = 'UPDATE Table_Name SET column1 = ?, column2 = ? WHERE rowid = ? AND column1 = ?;'
+        assert db_general.update_command_w_where(table, columns, columns_w_condition) == command
+
+    def test_select_column_command(self):
+        table = 'Table_Name'
+        columns = ('column1', 'column2')
+        command = 'SELECT column1, column2 FROM Table_Name;'
+        assert db_general.select_column_command(table, columns) == command
+
+    def test_select_columns_where_command(self):
+        table = 'Table_Name'
+        columns = ('column1', 'column2')
+        columns_w_cond = ('column3', 'column4', 'column5')
+        command = 'SELECT column1, column2 FROM Table_Name WHERE column3 = ? AND column4 = ? AND column5 = ?;'
+        assert db_general.select_columns_where_command(table, columns, columns_w_cond) == command
 
 
 # def test_master_table_columns():
@@ -64,33 +61,34 @@ def db():
 #     column_data = DB_general.master_table_columns
 #     assert column_data == db_ini.get_columns_for_table('tables')
 
+class TestStaticFcns():
 
-def test_string_to_column_data():
-    columns_as_str = '(table_name, (TEXT, NOT NULL, UNIQUE)), (column_data, (TEXT, NOT NULL))'
-    column_data = DB_general.string_to_column_data(columns_as_str)
-    assert column_data == DB_general.master_table_columns
-    # do one item tuples cause problems?
-    column_data = {'Col1': ('TEXT',), 'Col2': ('TEXT',), 'Col3': ('INTEGER',)}
-    column_data_as_str = '(Col1, (TEXT)), (Col2, (TEXT)), (Col3, (INTEGER))'
-    assert column_data == DB_general.string_to_column_data(column_data_as_str)
+    def test_string_to_column_data(self):
+        columns_as_str = '(table_name, (TEXT, NOT NULL, UNIQUE)), (column_data, (TEXT, NOT NULL))'
+        column_data = DB_general.string_to_column_data(columns_as_str)
+        assert column_data == DB_general.master_table_columns
+        # do one item tuples cause problems?
+        column_data = {'Col1': ('TEXT',), 'Col2': ('TEXT',), 'Col3': ('INTEGER',)}
+        column_data_as_str = '(Col1, (TEXT)), (Col2, (TEXT)), (Col3, (INTEGER))'
+        assert column_data == DB_general.string_to_column_data(column_data_as_str)
 
-def test_column_data_as_string():
-    columns_as_str = '(table_name, (TEXT, NOT NULL, UNIQUE)), (column_data, (TEXT, NOT NULL))'
-    column_data_as_str = DB_general.column_data_as_string(DB_general.master_table_columns)
-    assert columns_as_str == column_data_as_str
+    def test_column_data_as_string(self):
+        columns_as_str = '(table_name, (TEXT, NOT NULL, UNIQUE)), (column_data, (TEXT, NOT NULL))'
+        column_data_as_str = DB_general.column_data_as_string(DB_general.master_table_columns)
+        assert columns_as_str == column_data_as_str
 
-def test_prepare_to_add_to_master_table():
-    table = 'Table_Name'
-    column_data = {'Col1': ('TEXT', 'UNIQUE')}
-    result = DB_general.prepare_to_add_to_master_table(table, column_data)
-    assert result[0] == ('table_name', 'column_data')
-    assert result[1] == ('Table_Name', '(Col1, (TEXT, UNIQUE))')
+    def test_prepare_to_add_to_master_table(self):
+        table = 'Table_Name'
+        column_data = {'Col1': ('TEXT', 'UNIQUE')}
+        result = DB_general.prepare_to_add_to_master_table(table, column_data)
+        assert result[0] == ('table_name', 'column_data')
+        assert result[1] == ('Table_Name', '(Col1, (TEXT, UNIQUE))')
 
-def test_table_row_as_dict():
-    columns = ('col1', 'col2', 'col3')
-    row = (1, 2, 3)
-    row_dict = DB_general.table_row_as_dict(row, columns)
-    assert row_dict == {'col1': 1, 'col2': 2, 'col3': 3}
+    def test_table_row_as_dict(self):
+        columns = ('col1', 'col2', 'col3')
+        row = (1, 2, 3)
+        row_dict = DB_general.table_row_as_dict(row, columns)
+        assert row_dict == {'col1': 1, 'col2': 2, 'col3': 3}
 
 
 def test_DB_general(db):

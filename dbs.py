@@ -1,4 +1,5 @@
 import time
+from typing import Iterable, Optional
 
 from cryptography.fernet import Fernet
 
@@ -8,7 +9,7 @@ import crypto_stuff as cs
 
 
 # generate a dummy encrypted string, key or has
-def generate_dummy_string(type_of_string, fernet_obj=None, password_hasher=None):
+def generate_dummy_string(type_of_string: str, fernet_obj: Optional[Fernet] =None, password_hasher: Optional[cs.argon2.PasswordHasher] =None) -> str | bytes:
     if type_of_string == 'normal':
         if fernet_obj is None:
             fernet_obj = Fernet(Fernet.generate_key())
@@ -25,7 +26,7 @@ def generate_dummy_string(type_of_string, fernet_obj=None, password_hasher=None)
         raise Exception('Invalid type of dummy data')
     
 # generating many rows of dummy data
-def generate_dummy_data(type_tuple, num_of_rows, fernet_obj=None, password_hasher=None):
+def generate_dummy_data(type_tuple: tuple[str], num_of_rows: int, fernet_obj: Optional[Fernet] =None, password_hasher: Optional[cs.argon2.PasswordHasher]=None) -> list[tuple[str | bytes]]:
     dummy_data = []
     for _ in range(num_of_rows):
         datarow = tuple(generate_dummy_string(t, fernet_obj, password_hasher) for t in type_tuple)
@@ -34,7 +35,7 @@ def generate_dummy_data(type_tuple, num_of_rows, fernet_obj=None, password_hashe
 
 
 # initiate 'auth', 'keys' or 'password' db
-def initiate_db(filepath, db_type, num_of_dummy_inserts=10):
+def initiate_db(filepath, db_type: str, num_of_dummy_inserts: int =10) -> DB_general:
     db = DB_general(filepath)
     for name, table_dict in table_data.items():
         if name == db_type:
@@ -77,21 +78,21 @@ class DB_auth(DB_general):
         if len(self.select_all(self.table)[0]) != 4:
             raise Exception('Something is wrong with columns in auth table')
 
-    def check_uniqueness_of_keys(self):
+    def check_uniqueness_of_keys(self) -> bool:
         keys = tuple(row[0] for row in self.select_columns(self.table, self.cols[1:]))
         if len(keys) == len(set(keys)):
             return True
         # if len(keys) != len(set(keys)):
         return False
 
-    def is_key_in_keys(self, key):
+    def is_key_in_keys(self, key: bytes) -> bool:
         keys = tuple(row[0] for row in self.select_columns(self.table, self.cols[1:]))
         if key in keys:
             return True
         return False
 
     # check the given password and return the corresponding (encrypted) master key (and possibly rowid)
-    def check_password(self, password, with_rowid=False):
+    def check_password(self, password: str, with_rowid: bool =False) -> bytes:
         content = self.select_columns(self.table, ('rowid', *self.cols[:2]))
         ph = cs.PasswordHasher()
         search_results = []
@@ -114,7 +115,7 @@ class DB_auth(DB_general):
         
     # add password and hash it; generate key if necessary; add time, and encrypt them
     # return master key
-    def add_password(self, password, salt, master_key=None, rowid=None):
+    def add_password(self, password: str, salt: bytes, master_key: bytes =None, rowid: int =None) -> bytes:
         # from pm_data import salt_thingie
         ph = cs.PasswordHasher()
         hash = ph.hash(password)
@@ -133,7 +134,7 @@ class DB_auth(DB_general):
         return master_key
     
     # get the actual master key
-    def decrypt_key(self, encrypted_key, password, salt):
+    def decrypt_key(self, encrypted_key: bytes, password: str, salt: bytes) -> bytes:
         f = cs.do_crypto_stuff(password, salt, 200_000)
         return f.decrypt(encrypted_key)
 
@@ -146,7 +147,7 @@ class DB_keys(DB_general):
         self.cols = ('key', 'in_use', 'date_modified')
     
     # add more dummy data
-    def add_dummy_data(self, table_num, num_of_rows=10):
+    def add_dummy_data(self, table_num: int, num_of_rows: int =10) -> None:
         t_tuple = type_tuples['keys']
         f = Fernet(Fernet.generate_key())
         dummy_data = generate_dummy_data(t_tuple, num_of_rows, f)
@@ -154,7 +155,7 @@ class DB_keys(DB_general):
         self.insert_many(table, self.tables[table].keys(), dummy_data)
 
     # find rows that are not in use (and also rows that are)
-    def find_vacancies(self, table_num, master_key):
+    def find_vacancies(self, table_num: int, master_key: bytes) -> list[list[int], list[int]]:
         vacant_rowids = []
         in_use_rowids = []
         f = Fernet(master_key)
@@ -177,15 +178,15 @@ class DB_keys(DB_general):
         return [vacant_rowids, in_use_rowids]
 
     # insert key to table, change row status to in_use and add timestamp
-    def insert_key(self, key, table_num, rowid, master_key):
+    def insert_key(self, key: bytes, table_num: int, rowid: int, master_key: bytes):
         f = Fernet(master_key)
         timestamp = str(int(time.time()))
         data = (f.encrypt(key), f.encrypt('in_use'.encode()).decode(), f.encrypt(timestamp.encode()).decode())
         table = self.table_tuple[table_num]
         self.update_by_rowid(table, self.cols, data, rowid)
     
-    # generate new key and add it to table
-    def add_new_key(self, table_num, master_key):
+    # generate new key and add it to table, returns row and key
+    def add_new_key(self, table_num: int, master_key: bytes) -> tuple[int, bytes]:
         # table = self.table_tuple[table_num]
         available_rowids = self.find_vacancies(table_num, master_key)[0]
         # print(available_rowids)
@@ -195,17 +196,17 @@ class DB_keys(DB_general):
         return rowid, key
 
     # overwrite key based on rowid
-    def remove_key(self, table_num, rowid):
+    def remove_key(self, table_num: int, rowid: int) -> None:
         overwrite = generate_dummy_data(type_tuples['keys'], 1)[0]
         table = self.table_tuple[table_num]
         self.update_by_rowid(table, self.cols, overwrite, rowid)
 
     # get the actual key
-    def decrypt_key(self, encrypted_key, master_key):
+    def decrypt_key(self, encrypted_key: bytes, master_key: bytes) -> bytes:
         return Fernet(master_key).decrypt(encrypted_key)
     
     # return a dict with rowids as keys and (decrypted) keys as values
-    def get_rows_and_keys(self, table_num, master_key):
+    def get_rows_and_keys(self, table_num: int, master_key: bytes) -> dict[int, bytes]:
         table = self.table_tuple[table_num]
         used_rowids = self.find_vacancies(table_num, master_key)[1]
         all_rows = self.select_all(table)
@@ -222,7 +223,7 @@ class DB_password(DB_general):
         super().__init__(filepath_of_db)
         self.table_tuple = ('apps', 'emails', 'data')
     
-    def add_dummy_data(self, data_type, num_of_rows=10):
+    def add_dummy_data(self, data_type: int, num_of_rows: int =10):
         table = self.table_tuple[data_type]
         f = Fernet(Fernet.generate_key())
         t_tuple = type_tuples['password'][:len(self.tables[table].keys())]
@@ -230,7 +231,7 @@ class DB_password(DB_general):
         self.insert_many(table, self.tables[table].keys(), dummy_data)
 
     # get list of data_type (0 = apps or 1 = emails)
-    def get_list(self, data_type, rows_and_keys):
+    def get_list(self, data_type: int, rows_and_keys: dict[int, bytes]) -> list[str]:
         if data_type not in (0, 1):
             raise Exception(f'Invalid data type: {data_type=}')
         all_data = self.select_all(self.table_tuple[data_type])
@@ -243,7 +244,7 @@ class DB_password(DB_general):
         return app_list
 
     # find app (data_type = 0) of email (1) containing str_to_find
-    def find(self, data_type, str_to_find, rows_and_keys):
+    def find(self, data_type: int, str_to_find: str, rows_and_keys: dict[int, bytes]) -> list[tuple[int, str]]:
         if data_type not in (0, 1):
             raise Exception(f'Invalid data type: {data_type=}')
         all_data = self.select_all(self.table_tuple[data_type])
@@ -257,7 +258,7 @@ class DB_password(DB_general):
         return findings
 
     # find usernames and passwords related to app or email
-    def find_password(self, data_type, rowid, rows_and_keys):
+    def find_password(self, data_type: int, rowid: int, rows_and_keys: dict[int, bytes]) -> list[tuple[int, str, int, str, int, str]]:
         if data_type not in (0, 1):
             raise Exception(f'Invalid data type: {data_type=}')
         all_data = self.select_all(self.table_tuple[-1])
@@ -277,7 +278,7 @@ class DB_password(DB_general):
         return findings
 
     # data_type: 0 = app, 1 = email or 2 = data
-    def insert_data(self, data_type, data, row_and_key):
+    def insert_data(self, data_type: int, data: Iterable[str], row_and_key: dict[int, bytes]) -> None:
         # choose table based on data_type
         try:
             table = self.table_tuple[data_type]
@@ -291,7 +292,7 @@ class DB_password(DB_general):
         self.update_by_rowid(table, columns, encrypted_data, row_and_key[0])
 
     # write nonsense over a row of data
-    def delete_data(self, data_type, rowid):
+    def delete_data(self, data_type: int, rowid: int) -> None:
         # choose table based on data_type
         try:
             table = self.table_tuple[data_type]
@@ -301,7 +302,7 @@ class DB_password(DB_general):
         dummy_row = generate_dummy_data(type_tuples['password'][:len(columns)], 1)[0]
         self.update_by_rowid(table, columns, dummy_row, rowid)
 
-    def change_password(self, new_password, row_and_key):
+    def change_password(self, new_password: str, row_and_key: tuple[int, bytes]) -> None:
         f = Fernet(row_and_key[1])
         encrypted_pw = cs.encrypt_text(new_password, f)
         self.update_by_rowid('data', ('password',), (encrypted_pw,), row_and_key[0])

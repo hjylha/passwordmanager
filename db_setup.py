@@ -1,7 +1,7 @@
 '''names of tables and columns'''
 
-table_data = dict()
-type_tuples = dict()
+table_data: dict[str, dict[str, dict[str, tuple[str]]]] = dict()
+type_tuples: dict[str, tuple[str]] = dict()
 
 # the auth db
 table_data['auth'] = {'auth': {'hash': ('TEXT', 'NOT NULL'),
