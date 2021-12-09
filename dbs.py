@@ -90,15 +90,18 @@ class DB_auth(DB_general):
             return True
         return False
 
-    # check the given password and return the corresponding (encrypted) master key
-    def check_password(self, password):
-        content = self.select_columns(self.table, self.cols[:2])
+    # check the given password and return the corresponding (encrypted) master key (and possibly rowid)
+    def check_password(self, password, with_rowid=False):
+        content = self.select_columns(self.table, ('rowid', *self.cols[:2]))
         ph = cs.PasswordHasher()
         search_results = []
         for row in content:
             try:
-                ph.verify(row[0], password)
-                search_results.append(row[1])
+                ph.verify(row[1], password)
+                if with_rowid:
+                    search_results.append((row[0], row[2]))
+                else:
+                    search_results.append(row[2])
             except cs.argon2.exceptions.VerifyMismatchError:
                 pass
         if len(search_results) == 1:

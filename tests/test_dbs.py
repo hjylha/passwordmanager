@@ -182,6 +182,7 @@ class TestDBauth():
         assert int(time.time()) - int(time_in_db) < 2
         # also check check_password here as well
         assert row2[2] == dba.check_password(password)
+        assert (rowid, row2[2]) == dba.check_password(password, True)
 
         # it is extremely unlikely that generated password is already in db
         password = dbs.cs.generate_password()
