@@ -290,6 +290,17 @@ class DB_password(DB_general):
         columns = self.tables[table].keys()
         self.update_by_rowid(table, columns, encrypted_data, row_and_key[0])
 
+    # write nonsense over a row of data
+    def delete_data(self, data_type, rowid):
+        # choose table based on data_type
+        try:
+            table = self.table_tuple[data_type]
+        except IndexError:
+            raise Exception(f'Invalid data type: {data_type=}')
+        columns = self.tables[table].keys()
+        dummy_row = generate_dummy_data(type_tuples['password'][:len(columns)], 1)[0]
+        self.update_by_rowid(table, columns, dummy_row, rowid)
+
 
 
 

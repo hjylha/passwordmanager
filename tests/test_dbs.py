@@ -389,6 +389,24 @@ class TestDBpassword():
         results = dbp.find(1, search_text, rows_and_keys)
         assert results == []
     
+    def test_delete_data(self, dbp, rows_and_keys):
+        rowid = 6
+        key = rows_and_keys[rowid]
+        f = dbs.Fernet(key)
+        # check the 'old' data
+        data = ['username', '00003', 'password', '0000001', 'url']
+        row = dbp.select_row_by_rowid('data', rowid)
+        assert dbs.cs.decrypt_text(row[1], f) == data[0]
+        dbp.delete_data(2, 6)
+
+        # now trying the key raises exception
+        row = dbp.select_row_by_rowid('data', rowid)
+        with pytest.raises(dbs.cs.cryptography.fernet.InvalidToken):
+            dbs.cs.decrypt_text(row[1], f) == data[0]
+
+        # insert it back
+        dbp.insert_data(2, data, (rowid, key))
+    
     def test_find_password(self, dbp, rows_and_keys):
         # exception
         data_type = 420
