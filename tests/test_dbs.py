@@ -259,6 +259,16 @@ class TestDBkeys():
         f = dbs.Fernet(master_key)
         assert key == f.decrypt(row_after[1])
         assert 'in_use' == f.decrypt(row_after[2].encode()).decode()
+    
+    def test_remove_key(self, dbk, master_key):
+        table_num = 0
+        rowid = 5
+        dbk.remove_key(table_num, rowid, master_key)
+        # row should not be in use anymore
+        assert rowid not in dbk.find_vacancies(table_num, master_key)[1]
+        # add it back
+        key = dbs.Fernet.generate_key()
+        dbk.insert_key(key, table_num, rowid, master_key)
 
     def test_decrypt_key(self, dbk, master_key):
         key = dbs.Fernet.generate_key()
@@ -287,7 +297,7 @@ class TestDBkeys():
         table_num = 0  # 'app_keys'
         vacancies = dbk.find_vacancies(table_num, master_key)
         num_of_rows = len(dbk.select_all(dbk.table_tuple[table_num]))
-        # added keys to rowids 2 and 5
+        # added keys to rowids 2 and 5, but removed 5
         assert vacancies[1] == [2, 5]
         assert vacancies[0] == [i+1 for i in range(num_of_rows) if i+1 not in [2, 5]]
 

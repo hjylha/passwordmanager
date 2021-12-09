@@ -194,6 +194,12 @@ class DB_keys(DB_general):
         self.insert_key(key, table_num, rowid, master_key)
         return rowid, key
 
+    # overwrite key based on rowid
+    def remove_key(self, table_num, rowid, master_key):
+        overwrite = generate_dummy_data(type_tuples['keys'], 1)[0]
+        table = self.table_tuple[table_num]
+        self.update_by_rowid(table, self.cols, overwrite, rowid)
+
     # get the actual key
     def decrypt_key(self, encrypted_key, master_key):
         return Fernet(master_key).decrypt(encrypted_key)
