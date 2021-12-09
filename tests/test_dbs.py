@@ -406,6 +406,14 @@ class TestDBpassword():
 
         # insert it back
         dbp.insert_data(2, data, (rowid, key))
+
+    def test_change_password(self, dbp, rows_and_keys):
+        rowid = 3
+        row_and_key = (rowid, rows_and_keys[rowid])
+        dbp.change_password('new_pass', row_and_key)
+        # checking
+        results = dbp.find_password(0, 1, rows_and_keys)
+        assert set((row[3] for row in results)) == set(('password', 'new_pass'))
     
     def test_find_password(self, dbp, rows_and_keys):
         # exception

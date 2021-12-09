@@ -301,6 +301,9 @@ class DB_password(DB_general):
         dummy_row = generate_dummy_data(type_tuples['password'][:len(columns)], 1)[0]
         self.update_by_rowid(table, columns, dummy_row, rowid)
 
-
+    def change_password(self, new_password, row_and_key):
+        f = Fernet(row_and_key[1])
+        encrypted_pw = cs.encrypt_text(new_password, f)
+        self.update_by_rowid('data', ('password',), (encrypted_pw,), row_and_key[0])
 
 
