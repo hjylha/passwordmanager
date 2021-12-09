@@ -355,7 +355,8 @@ class TestDBpassword():
 
             row_before = dbp.select_row_by_rowid('data', rowid)
             data_type = 2
-            data = ['username', '00001', 'password', '0000003', 'url']
+            # email 3, app 1
+            data = ['username', '00003', 'password', '0000001', 'url']
             dbp.insert_data(data_type, data, row_and_key)
             row_after = dbp.select_row_by_rowid('data', rowid)
             assert row_before != row_after
@@ -395,12 +396,14 @@ class TestDBpassword():
         with pytest.raises(Exception):
             dbp.find_password(data_type, rowid_to_search, rows_and_keys)
 
-        data_type = 0
-        rowid_to_search = 1
+        # search email 3
+        data_type = 1
+        rowid_to_search = 3
         result = dbp.find_password(data_type, rowid_to_search, rows_and_keys)
         assert len(result) == 3
 
-        data_type = 1
-        rowid_to_search = 3
+        # search app 1
+        data_type = 0
+        rowid_to_search = 1
         result = dbp.find_password(data_type, rowid_to_search, rows_and_keys)
         assert len(result) == 3

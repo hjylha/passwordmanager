@@ -195,7 +195,7 @@ class DB_keys(DB_general):
         return rowid, key
 
     # overwrite key based on rowid
-    def remove_key(self, table_num, rowid, master_key):
+    def remove_key(self, table_num, rowid):
         overwrite = generate_dummy_data(type_tuples['keys'], 1)[0]
         table = self.table_tuple[table_num]
         self.update_by_rowid(table, self.cols, overwrite, rowid)
@@ -265,14 +265,15 @@ class DB_password(DB_general):
         for row in all_data:
             if row[0] in rows_and_keys:
                 f = Fernet(rows_and_keys[row[0]])
+                decrypted_row = cs.decrypt_text_list(row[1:], f)
                 things_to_add = False
-                if not data_type and int(cs.decrypt_text(row[2], f)) == rowid:
+                if data_type and int(decrypted_row[1]) == rowid:
                     things_to_add = True
-                elif data_type and int(cs.decrypt_text(row[4], f)) == rowid:
+                elif not data_type and int(decrypted_row[3]) == rowid:
                     things_to_add = True
                 if things_to_add:
-                    decrypted_row = cs.decrypt_text_list(row[1:], f)
-                    findings.append(tuple([row[0]] + decrypted_row))
+                    finding = (row[0], decrypted_row[0], int(decrypted_row[1]), decrypted_row[2], int(decrypted_row[3]), decrypted_row[4])
+                    findings.append(finding)
         return findings
 
     # data_type: 0 = app, 1 = email or 2 = data
