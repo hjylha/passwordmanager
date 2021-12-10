@@ -16,7 +16,7 @@ To start the password manager, just use command
 * cryptography
 * argo2-cffi
 * pyperclip
-* pytest 
+* pytest (fot testing)
 <!-- * base64
 * getpass
 * sqlite3
@@ -24,6 +24,13 @@ To start the password manager, just use command
 
 More detailed requirements can be found in requirements.txt.
 
+
+### Currenly working on
+
+Changing to a more complicated database structure with three encrypted databases:
+* one containing the master key, which can be decrypted with master password and salt
+* one containing the keys, which can be decrypted with the master key
+* one containing the password data,which can be decrypted with keys
 
 
 ### Possible improvements
