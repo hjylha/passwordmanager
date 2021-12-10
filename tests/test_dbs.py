@@ -52,6 +52,20 @@ def dbp():
     return DB_password(Path('test_db_pwd.db'))
 
 
+class TestSearch():
+    def test_find_from_list(self):
+        word = 'EmAiL'
+        app_list = [(1, 'ma1l1@email.com'), (3, 'ma1l3@email.com'), (6, 'mail6@email.com')]
+        assert app_list == dbs.find_from_list(word, app_list)
+        assert dbs.find_from_list(word, app_list, True) == []
+
+        word = 'MA1L'
+        assert dbs.find_from_list(word, app_list) == [(1, 'ma1l1@email.com'), (3, 'ma1l3@email.com')]
+
+        word = 'ma1l3@email.com'
+        assert dbs.find_from_list(word, app_list, True) == [(3, 'ma1l3@email.com')]
+
+
 class TestDummydata():
 
     def test_generate_dummy_string(self):
@@ -366,11 +380,11 @@ class TestDBpassword():
             int(f.decrypt(row_after[-1].encode()).decode())
 
     def test_get_list(self, dbp, rows_and_keys):
-        app_list = dbp.get_list(0, rows_and_keys)
+        app_list = dbp.get_list(0, rows_and_keys, False)
         assert app_list == ['app1', 'app3', 'app6']
 
         app_list = dbp.get_list(1, rows_and_keys)
-        assert app_list == ['mail1@email.com', 'mail3@email.com', 'mail6@email.com']
+        assert app_list == [(1, 'mail1@email.com'), (3, 'mail3@email.com'), (6, 'mail6@email.com')]
 
     def test_find(self, dbp, rows_and_keys):
         search_text = 'app'

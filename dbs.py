@@ -8,6 +8,16 @@ from db_general import DB_general
 import crypto_stuff as cs
 
 
+# see if string is contained in some string in a list
+def find_from_list(str_to_find: str, list_to_search: Iterable[tuple[int, str]], exact_match: bool =False) -> list[tuple[int, str]]:
+    findings = []
+    for rowid, name in list_to_search:
+        if str_to_find.lower() in name.lower() and not exact_match:
+            findings.append((rowid, name))
+        elif str_to_find.lower() == name.lower():
+            findings.append((rowid, name))
+    return findings
+
 # generate a dummy encrypted string, key or has
 def generate_dummy_string(type_of_string: str, fernet_obj: Optional[Fernet] =None, password_hasher: Optional[cs.argon2.PasswordHasher] =None) -> str | bytes:
     if type_of_string == 'normal':
@@ -231,7 +241,7 @@ class DB_password(DB_general):
         self.insert_many(table, self.tables[table].keys(), dummy_data)
 
     # get list of data_type (0 = apps or 1 = emails)
-    def get_list(self, data_type: int, rows_and_keys: dict[int, bytes]) -> list[str]:
+    def get_list(self, data_type: int, rows_and_keys: dict[int, bytes], w_rowid: bool = True) -> list[str] | list[tuple[int, str]]:
         if data_type not in (0, 1):
             raise Exception(f'Invalid data type: {data_type=}')
         all_data = self.select_all(self.table_tuple[data_type])
@@ -239,7 +249,10 @@ class DB_password(DB_general):
         for row in all_data:
             if row[0] in rows_and_keys:
                 f = Fernet(rows_and_keys[row[0]])
-                app_list.append(cs.decrypt_text(row[1], f))
+                if w_rowid:
+                    app_list.append((row[0], cs.decrypt_text(row[1], f)))
+                else:
+                    app_list.append(cs.decrypt_text(row[1], f))
         # for rowid, key in rows_and_keys.items():
         return app_list
 
