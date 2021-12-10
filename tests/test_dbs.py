@@ -378,6 +378,23 @@ class TestDBpassword():
                 assert f.decrypt(row_after[i+1].encode()).decode() == item
             # no errors with timestamp
             int(f.decrypt(row_after[-1].encode()).decode())
+    
+    def test_insert_password_data(self, dbp, rows_and_keys):
+        rowid = 1
+        row_and_key = (rowid, rows_and_keys[rowid])
+        # change app from 1 to 3 and email from 3 to 6
+        a = 3
+        e = 6
+        url = 'www.url.com'
+        un = 'new_username'
+        pw_data = {'app_name': a, 'email': e, 'url': url, 'username': un}
+        dbp.insert_password_data(pw_data, row_and_key)
+
+        row = dbp.select_row_by_rowid('data', rowid)
+        f = dbs.Fernet(row_and_key[1])
+        assert dbs.cs.decrypt_text(row[1], f) == un
+        assert int(dbs.cs.decrypt_text(row[2], f)) == e
+        assert dbs.cs.decrypt_text(row[5], f) == url
 
     def test_get_list(self, dbp, rows_and_keys):
         app_list = dbp.get_list(0, rows_and_keys, False)
@@ -440,10 +457,10 @@ class TestDBpassword():
         data_type = 1
         rowid_to_search = 3
         result = dbp.find_password(data_type, rowid_to_search, rows_and_keys)
-        assert len(result) == 3
+        assert len(result) == 2
 
         # search app 1
         data_type = 0
         rowid_to_search = 1
         result = dbp.find_password(data_type, rowid_to_search, rows_and_keys)
-        assert len(result) == 3
+        assert len(result) == 2

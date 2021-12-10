@@ -303,6 +303,19 @@ class DB_password(DB_general):
         encrypted_data = cs.encrypt_text_list(data, f)
         columns = self.tables[table].keys()
         self.update_by_rowid(table, columns, encrypted_data, row_and_key[0])
+    
+    # insert new password or update password data
+    # data of the form {'username': str, 'email': int, 'password': str, 'app_name': int, 'url': str}
+    def insert_password_data(self, data: dict[str, str | int], row_and_key: dict[int, bytes]) -> None:
+        if 'app_name' in data:
+            data['app_name'] = ''.join(['0' for _ in range(cs.secrets.randbelow(23))] + [str(data['app_name'])])
+        if 'email' in data:
+            data['email'] = ''.join(['0' for _ in range(cs.secrets.randbelow(23))] + [str(data['email'])])
+        data['date_modified'] = str(int(time.time()))
+        f = Fernet(row_and_key[1])
+        encrypted_data = cs.encrypt_text_list(data.values(), f)
+        columns = data.keys()
+        self.update_by_rowid(self.table_tuple[2], columns, encrypted_data, row_and_key[0])
 
     # write nonsense over a row of data
     def delete_data(self, data_type: int, rowid: int) -> None:
