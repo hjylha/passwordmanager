@@ -307,6 +307,7 @@ class DB_password(DB_general):
     # insert new password or update password data
     # data of the form {'username': str, 'email': int, 'password': str, 'app_name': int, 'url': str}
     def insert_password_data(self, data: dict[str, str | int], row_and_key: dict[int, bytes]) -> None:
+        # add some zeros to mess with numbers for no reason
         if 'app_name' in data:
             data['app_name'] = ''.join(['0' for _ in range(cs.secrets.randbelow(23))] + [str(data['app_name'])])
         if 'email' in data:
