@@ -114,39 +114,64 @@ class PM():
         findings[email] = self.find_info(1, email)
         return findings
 
-    # TODO: this should check if the data already exists
-    def add_password(self, username: str, email_rowid: int, password: str, app_rowid: int, url: str) -> None:
+    # add password, if (app, username) is not in db
+    def add_password(self, username: str, email_rowid: int, password: str, app_rowid: int, url: str) -> bool:
         if not self.master_key:
             raise Exception('Master key not active')
+        if not self.app_list or self.email_list:
+            self.set_name_lists()
+        # check if app and username already in db
+        app = [app_name for r, app_name in self.app_list if r == app_rowid][0]
+        if self.find_password(app, True, username):
+            # should it raise an exception?
+            return False
         # add new key
         row_and_key = self.dbk.add_new_key(2, self.master_key)
         # insert data in the correct format
         data = {'username': username, 'email': email_rowid, 'password': password, 'app_name': app_rowid, 'url': url}
         self.dbp.insert_password_data(data, row_and_key)
+        return True
     
     # just add the password
     def force_add_password(self, username: str, email: str, password: str, app: str, url: str) -> None:
+        if not self.master_key:
+            raise Exception('Master key not active')
+        # add new key
+        row_and_key = self.dbk.add_new_key(2, self.master_key)
         email_rowid = self.add_info(1, email)
         app_rowid = self.add_info(0, app)
-        self.add_password(username, email_rowid, password, app_rowid, url)
+        # insert data in the correct format
+        data = {'username': username, 'email': email_rowid, 'password': password, 'app_name': app_rowid, 'url': url}
+        self.dbp.insert_password_data(data, row_and_key)
+        # self.add_password(username, email_rowid, password, app_rowid, url)
 
-    def find_password(self, app: str) -> list[tuple[int, str, str, str, str, str]]:
+    # find user and password info for app
+    def find_password(self, app: str, exact_match: bool = False, username: Optional[str] = None) -> list[tuple[int, str, str, str, str, str]]:
         if not self.master_key:
             raise Exception('Master key not active')
         if not self.app_list:
             self.set_name_lists()
-        app_info = dbs.find_from_list(app, self.app_list)
+        app_info = dbs.find_from_list(app, self.app_list, exact_match)
         password_info = []
         for info in app_info:
             # print('app info has rowid:', info[0])
             pw_rows = self.dbp.find_password(0, info[0], self.dbk.get_rows_and_keys(2, self.master_key))
             # show the actual email and password
-            for i, row in enumerate(pw_rows):
-                row = list(row)
-                row[4] = info[1]
-                row[2] = [e for r, e in self.email_list if r == row[2]][0]
-                pw_rows[i] = tuple(row)
-            password_info += pw_rows
+            if username is None:
+                for i, row in enumerate(pw_rows):
+                    row = list(row)
+                    row[4] = info[1]
+                    row[2] = [e for r, e in self.email_list if r == row[2]][0]
+                    pw_rows[i] = tuple(row)
+                password_info += pw_rows
+            # if we also want to match username
+            else:
+                for i, row in enumerate(pw_rows):
+                    if row[1] == username:
+                        row = list(row)
+                        row[4] = info[1]
+                        row[2] = [e for r, e in self.email_list if r == row[2]][0]
+                        password_info.append(tuple(row))
         return password_info
 
     # changing and removing password depends on the rowid

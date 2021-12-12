@@ -153,14 +153,6 @@ class TestPasswordManagement():
         app = 'good app'
         assert pm_w_master_key.find_info(0, app)[0][1] == app  
 
-    def test_get_name_list(self, pm_w_stuff):
-        app = 'another one'
-        pm_w_stuff.add_info(0, app)
-        # this makes it two apps
-        assert len(pm_w_stuff.get_name_list(0)) == 3
-        # there is only 1 email atm
-        assert len(pm_w_stuff.get_name_list(1)) == 2
-
     def test_prepare_to_add_password(self, pm_w_master_key):
         app = 'good app'
         email = 'zoomin@place.org'
@@ -177,9 +169,18 @@ class TestPasswordManagement():
         infos = pm_w_stuff.prepare_to_add_password(app, email)
         a = infos[app][0][0]
         e = infos[email][0][0]
-        pm_w_stuff.add_password(username, e, password, a, url)
+        added = pm_w_stuff.add_password(username, e, password, a, url)
         # see if the info can be found
         pw_infos = pm_w_stuff.find_password(app)
+        if added:
+            assert isinstance(pw_infos[0][0], int)
+        else:
+            assert len(pw_infos) == 1
+        assert pw_infos[0][1:] == (username, email, password, app, url)
+
+        # make a different search
+        pw_infos = pm_w_stuff.find_password('a', False, username)
+        assert len(pw_infos) == 1
         assert pw_infos[0][1] == username
         assert pw_infos[0][2] == email
         assert pw_infos[0][3] == password
@@ -198,6 +199,8 @@ class TestPasswordManagement():
         pm_w_stuff.force_add_password(username, email, password, app, url)
 
         pw_infos = pm_w_stuff.find_password(app)
+        assert len(pw_infos) == 1
+        # print(pw_infos[0][0])
         assert pw_infos[0][1] == username
         assert pw_infos[0][2] == email
         assert pw_infos[0][3] == password
@@ -216,6 +219,15 @@ class TestPasswordManagement():
         pm_w_stuff.change_password(rowid, new_password)
         # checking
         assert pm_w_stuff.find_password(app)[0][3] == new_password
+    
+    # try to remember which apps and email have been added here
+    def test_get_name_list(self, pm_w_stuff):
+        app = 'another one'
+        pm_w_stuff.add_info(0, app)
+        # this makes it two apps, actually 3
+        assert len(pm_w_stuff.get_name_list(0)) == 3
+        # changed email makes it 3
+        assert len(pm_w_stuff.get_name_list(1)) == 3
 
     def test_update_password_data(self, pm_w_stuff):
         app = 'secret program'
@@ -230,11 +242,22 @@ class TestPasswordManagement():
         assert pw_info[2] == email
         assert pw_info[5] == url
 
+        # delete this afterwards
+        pm_w_stuff.delete_password(rowid)
+
     def test_delete_password(self, pm_w_stuff):
         app = 'good app'
         pw_infos = pm_w_stuff.find_password(app)
         rowids = tuple(row[0] for row in pw_infos)
         # remove all passwords related to app
+        for r in rowids:
+            pm_w_stuff.delete_password(r)
+        assert pm_w_stuff.find_password(app) == []
+        
+        # and the same for other app
+        app = 'secret program'
+        pw_infos = pm_w_stuff.find_password(app)
+        rowids = tuple(row[0] for row in pw_infos)
         for r in rowids:
             pm_w_stuff.delete_password(r)
         assert pm_w_stuff.find_password(app) == []
