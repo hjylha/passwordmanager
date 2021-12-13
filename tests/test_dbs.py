@@ -124,6 +124,13 @@ class TestDummydata():
 
 class TestInitiation():
 
+    def test_initiate_filepath(self):
+        path = Path.cwd() / 'more_tests' / 'testing.db'
+        dba = dbs.initiate_db(path, 'auth')
+        assert len(dba.select_all('auth')) == 10
+        path.unlink()
+        path.parent.rmdir()
+
     def test_initiate_auth_db(self, db):
         dba = dbs.initiate_db(db.filepath, 'auth')
         assert len(dba.select_all('auth')) == 10

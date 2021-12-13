@@ -46,6 +46,9 @@ def generate_dummy_data(type_tuple: tuple[str], num_of_rows: int, fernet_obj: Op
 
 # initiate 'auth', 'keys' or 'password' db
 def initiate_db(filepath, db_type: str, num_of_dummy_inserts: int =10) -> DB_general:
+    # make sure we can access filepath
+    if not filepath.parent.exists():
+        filepath.parent.mkdir(parents=True, exist_ok=True)
     db = DB_general(filepath)
     for name, table_dict in table_data.items():
         if name == db_type:
