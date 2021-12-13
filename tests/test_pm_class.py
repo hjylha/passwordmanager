@@ -7,7 +7,7 @@ import pytest
 import fix_imports
 import dbs
 from dbs import DB_auth, DB_keys, DB_password
-from pm_class import PM
+from pm_class import PM, is_valid_email, is_valid_url
 
 
 # get some dummy app names and email addresses
@@ -48,6 +48,34 @@ def pm_w_master_key(pm):
 def pm_w_stuff(pm_w_master_key):
     pm_w_master_key.set_name_lists()
     return pm_w_master_key
+
+def test_is_valid_email():
+    email = 'text@__fdfdfadfsadfa.lkjasdf'
+    assert is_valid_email(email)
+
+    email = 'big space@server.com'
+    assert not is_valid_email(email)
+
+    email = 'no_at_sign_but.con'
+    assert not is_valid_email(email)
+
+    email = 'too_many_@_signs_@q.w'
+    assert not is_valid_email(email)
+
+    email = 'one.but@not_on_the_right_side'
+    assert not is_valid_email(email)
+
+
+def test_is_valid_url():
+    url = 'place.after_dot'
+    assert is_valid_url(url)
+
+    url = 'big space.com'
+    assert not is_valid_url(url)
+
+    url = 'something_is_missing'
+    assert not is_valid_url(url)
+
 
 
 def test_init(pm):
@@ -145,6 +173,15 @@ class TestPasswordManagement():
         # assert email in [a for _, a in info]
         assert email in [a for _, a in pm_w_stuff.email_list]
 
+        # not valid email should be saved as -
+        email = 'not a valid email'
+        rowid = pm_w_stuff.add_info(1, email)
+        info = pm_w_stuff.find_info(1, email)
+        assert not info
+        info = pm_w_stuff.find_info(1, '-')
+        assert info
+        assert '-' in [a for _, a in pm_w_stuff.email_list]
+
     def test_find_info(self, pm_w_master_key):
         app = 'not here'
         assert pm_w_master_key.find_info(0, app) == []
@@ -226,8 +263,8 @@ class TestPasswordManagement():
         pm_w_stuff.add_info(0, app)
         # this makes it two apps, actually 3
         assert len(pm_w_stuff.get_name_list(0)) == 3
-        # changed email makes it 3
-        assert len(pm_w_stuff.get_name_list(1)) == 3
+        # changed email makes it 4
+        assert len(pm_w_stuff.get_name_list(1)) == 4
 
     def test_update_password_data(self, pm_w_stuff):
         app = 'secret program'

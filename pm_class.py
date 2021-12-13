@@ -3,7 +3,31 @@ from typing import Optional
 import dbs
 from dbs import PasswordNotFoundError, DB_auth, DB_keys, DB_password
 
+# make a basic check to see if email could be an email address
+def is_valid_email(email: str) -> bool:
+    # no spaces
+    if ' ' in email:
+        return False
+    # @ should be in email once and . after that
+    if '@' not in email:
+        return False
+    parts = email.split('@')
+    if len(parts) != 2:
+        return False
+    if '.' not in parts[1]:
+        return False
+    return True
 
+# check if url has at least one . and no spaces
+def is_valid_url(url: str) -> bool:
+    if ' ' in url:
+        return False
+    if '.' not in url:
+        return False
+    return True
+
+
+# class combining all the databases together
 class PM():
     def __init__(self, salt: bytes, db_auth: DB_auth, db_keys: DB_keys, db_data: DB_password) -> None:
         self.dba = db_auth
@@ -84,9 +108,9 @@ class PM():
             raise Exception('Master key not active')
         # check if name is already in db (not sure if this should be part of UI)
         if app_or_email:
-            if '@' not in name:
-                raise Exception('not a valid email address')
-                # return None
+            if not is_valid_email(name):
+                # raise Exception('not a valid email address')
+                name = '-'
             # list_of_similar_names = (name for _, name in self.find_info(app_or_email, name))
             findings = dbs.find_from_list(name, self.email_list, True)
         else:
