@@ -8,7 +8,8 @@ import getpass
 # from pm_setup import load_salt, initiate_db
 # from pm_data import default_db_filename, default_salt_filename
 # import pm_fcns as pm
-from pm_ui import PM_UI, clear_clipboard, clear_screen
+from pm_ui import PM_UI
+from pm_ui import clear_clipboard, clear_screen, yes_or_no_question, ask_for_username_and_password
 
 # ask to press enter, and clear clipboard
 def end_prompt():
@@ -25,7 +26,7 @@ def password_manager():
 
     if pm_ui.pm is None:
         print('Not all the necessary files are present.')
-        ans = pm_ui.yes_or_no_question('Do you want to initialize the Password Manager?')
+        ans = yes_or_no_question('Do you want to initialize the Password Manager?')
         if ans.lower() == 'y':
             pm_ui.initiate_pm()
             clear_screen()
@@ -34,7 +35,7 @@ def password_manager():
     
     un = 'placeholder username'
     if pm_ui.pm.master_key is None:
-        un, master_pw = pm_ui.ask_for_username_and_password()
+        un, master_pw = ask_for_username_and_password()
         if pm_ui.pm.check_master_password(master_pw):
             pm_ui.pm.set_name_lists()
         else:
@@ -52,16 +53,16 @@ def password_manager():
         print('(1) Add a new password')
         print('(2) Change a password')
         print('(3) Retrieve a password')
-        # TODO: this one
-        print('(4) Change information related to a password (NOT WORKING ATM)')
+        print('(4) Change information related to a password')
         print('(5) Show a list of apps with passwords')
         print('(7) Delete a password')
         print('(9) Clear Screen')
         print('(0) Exit')
         action = input()
         if action == '0':
-            ans = pm_ui.yes_or_no_question('Are you sure you want to exit Password Manager?')
+            ans = yes_or_no_question('Are you sure you want to exit Password Manager?')
             if ans.lower() == 'y':
+                clear_screen()
                 exit()
         elif action == '1':
             pm_ui.add_password()
@@ -73,12 +74,11 @@ def password_manager():
             pm_ui.find_password_for_app()
             end_prompt()
         elif action == '4':
-            print('Action under construction...')
-            # TODO
+            pm_ui.change_password_info()
             end_prompt()
         elif action == '5':
             print('These are the apps you have saved passwords for:')
-            app_list = [app for _, app in pm_ui.pm.get_name_list(0)]
+            app_list = [app for _, app in pm_ui.pm.app_list]
             for app in app_list:
                 print('\t', app)
             print('\n')
