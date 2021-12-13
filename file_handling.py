@@ -19,6 +19,8 @@ def get_salt(salt_path):
 def get_files():
     # salt
     salt_path = Path(file_locations.salt_path)
+    if not salt_path.parent.exists():
+        salt_path.parent.mkdir(parents=True, exist_ok=True)
     if not salt_path.exists():
         generate_salt(salt_path)
     salt = get_salt(salt_path)
