@@ -185,7 +185,7 @@ class DB_keys(DB_general):
                 print(in_use.decode())
                 vacant_rowids.append(row[0])
         if len(vacant_rowids) < 3:
-            self.add_dummy_data()
+            self.add_dummy_data(table_num)
             start = max(*in_use_rowids, *vacant_rowids) + 1
             vacant_rowids = vacant_rowids + [i for i in range(start, start+10)]
         return [vacant_rowids, in_use_rowids]
