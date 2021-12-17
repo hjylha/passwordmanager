@@ -101,6 +101,12 @@ class PM():
         self.app_list = self.get_name_list(0)
         self.email_list = self.get_name_list(1)
         
+    # make sure there are rows for new data
+    def check_num_of_rows(self, type_num: int) -> None:
+        len_k = len(self.dbk.select_all(self.dbk.table_tuple[type_num]))
+        len_d = len(self.dbp.select_all(self.dbp.table_tuple[type_num]))
+        if (row_num := (len_k - len_d)) > 0:
+            self.dbp.add_dummy_data(type_num, row_num)
 
     # app_or_email = 0 for app, 1 for email
     def add_info(self, app_or_email: int, name: str) -> Optional[int]:
@@ -118,6 +124,9 @@ class PM():
         if findings:
             return findings[0][0]
         # if name is not in db, add it
+        # make sure there are rows to add to
+        self.check_num_of_rows(app_or_email)
+        # get rowid and key, and insert
         row_and_key = self.dbk.add_new_key(app_or_email, self.master_key)
         self.dbp.insert_data(app_or_email, (name, str(0)), row_and_key)
         if app_or_email:
@@ -151,6 +160,8 @@ class PM():
             return False
         # add new key
         row_and_key = self.dbk.add_new_key(2, self.master_key)
+        # make sure there are rows
+        self.check_num_of_rows(2)
         # insert data in the correct format
         data = {'username': username, 'email': email_rowid, 'password': password, 'app_name': app_rowid, 'url': url}
         self.dbp.insert_password_data(data, row_and_key)
@@ -160,10 +171,14 @@ class PM():
     def force_add_password(self, username: str, email: str, password: str, app: str, url: str) -> None:
         if not self.master_key:
             raise Exception('Master key not active')
+        if not self.app_list or self.email_list:
+            self.set_name_lists()
         # add new key
         row_and_key = self.dbk.add_new_key(2, self.master_key)
         email_rowid = self.add_info(1, email)
         app_rowid = self.add_info(0, app)
+        # make sure there are rows
+        self.check_num_of_rows(2)
         # insert data in the correct format
         data = {'username': username, 'email': email_rowid, 'password': password, 'app_name': app_rowid, 'url': url}
         self.dbp.insert_password_data(data, row_and_key)

@@ -11,13 +11,17 @@ from pm_class import PM, is_valid_email, is_valid_url
 
 
 # get some dummy app names and email addresses
-@pytest.fixture
-def app_list():
-    return [f'app{i}' for i in range(100)]
+# @pytest.fixture
+# def app_list():
+#     return [f'app{i}' for i in range(20)]
+
+# @pytest.fixture
+# def email_list():
+#     return [f'email{i}@provider.com' for i in range(20)]
 
 @pytest.fixture
-def email_list():
-    return [f'email{i}@provider.com' for i in range(100)]
+def password_info_lines():
+    return [(f'user{i}', f'email{i}@provider.com', f'pwd{i}', f'app{i}', f'app{i}.net') for i in range(20)]
 
 
 # db with only 1 row of dummy data
@@ -243,6 +247,16 @@ class TestPasswordManagement():
         assert pw_infos[0][3] == password
         assert pw_infos[0][4] == app
         assert pw_infos[0][5] == url
+    
+    def test_force_add_password_many(self, pm_w_stuff, password_info_lines):
+        for line in password_info_lines:
+            pm_w_stuff.force_add_password(*line)
+        
+        line_num = 13
+        pw_infos = pm_w_stuff.find_password(password_info_lines[line_num][3])
+        assert len(pw_infos) == 1
+        for i in range(5):
+            assert pw_infos[0][i+1] == password_info_lines[line_num][i]
         
 
     def test_change_password(self, pm_w_stuff):
@@ -262,9 +276,9 @@ class TestPasswordManagement():
         app = 'another one'
         pm_w_stuff.add_info(0, app)
         # this makes it two apps, actually 3
-        assert len(pm_w_stuff.get_name_list(0)) == 3
+        assert len(pm_w_stuff.get_name_list(0)) == 23
         # changed email makes it 4
-        assert len(pm_w_stuff.get_name_list(1)) == 4
+        assert len(pm_w_stuff.get_name_list(1)) == 24
 
     def test_update_password_data(self, pm_w_stuff):
         app = 'secret program'
