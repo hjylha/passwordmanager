@@ -20,11 +20,12 @@ def get_salt(salt_path) -> bytes:
     with open(salt_path, 'rb') as f:
         return f.read()
 
-
+# get 
 def get_drives() -> list[str]:
     letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     return [f"{c}:" for c in letters if Path(f"{c}:").exists()]
 
+# get a bunch of folders where db files are searched from
 def get_possible_starting_folders() -> tuple:
     environ_keys = ['APPDATA', 'LOCALAPPDATA', 'ONEDRIVE', 'PROGRAMFILES', 'PROGRAMFILES(X86)', 'PUBLIC', 'USERPROFILE']
     # environ_keys.append('HOMEPATH')
@@ -36,6 +37,7 @@ def get_possible_starting_folders() -> tuple:
     return tuple(p_folders)
 
 
+# find an existing path from above folders
 def find_path(path: str):
     possible_folders = get_possible_starting_folders()
     for folder in possible_folders:
@@ -44,6 +46,7 @@ def find_path(path: str):
     else:
         return None
 
+# find an existing path from a list of possibilities
 def find_path_from_list(path_list):
     for path in path_list:
         if p := find_path(path):
@@ -51,12 +54,13 @@ def find_path_from_list(path_list):
     else:
         return None
 
-def get_files(salt_and_akd_paths: tuple[str, tuple[str], tuple[str], tuple[str]]):
+def get_files(salt_and_akd_paths: tuple[tuple[str], tuple[str], tuple[str], tuple[str]]):
     # salt
-    salt_path = Path(salt_and_akd_paths[0])
-    if not salt_path.parent.exists():
-        salt_path.parent.mkdir(parents=True, exist_ok=True)
-    if not salt_path.exists():
+    salt_path = find_path_from_list(salt_and_akd_paths[0])
+    if not salt_path:
+        salt_path = Path(salt_and_akd_paths[0][0])
+        if not salt_path.parent.exists():
+            salt_path.parent.mkdir(parents=True, exist_ok=True)
         generate_salt(salt_path)
     salt = get_salt(salt_path)
     # dbs

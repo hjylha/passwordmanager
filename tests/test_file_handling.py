@@ -1,11 +1,22 @@
 from pathlib import Path
 
+import pytest
+
 import fix_imports
 import file_handling as fh
 
 
 # This is very system specific, at least for now
 
+
+# some filenames
+@pytest.fixture
+def filepaths():
+    paths = ('test_salt.txt', 'test_a.db', 'test_k.db', 'test_d.db')
+    yield paths
+    for path in paths:
+        if Path(path).exists():
+            Path(path).unlink()
 
 
 def test_salt():
@@ -38,15 +49,15 @@ def test_find_path_from_list():
     path_list = ('tests/not existing file.ext', 'tests/test_file_handling.py')
     assert fh.find_path_from_list(path_list) == Path(__file__).resolve()
 
-def test_get_files():
-    salt_f = 'test_salt.txt'
+def test_get_files(filepaths):
+    salt_f = filepaths[0]
     # types = ('a', 'k', 'd')
     # some nonexistent files
     no_exist = 'test_not_exist.txt'
-    db_a = 'test_a.db'
-    db_k = 'test_k.db'
-    db_d = 'test_d.db'
-    paths = (salt_f, (no_exist, f'tests/{db_a}'), (no_exist, f'tests/{db_k}'), (no_exist, f'tests/{db_d}'))
+    db_a = filepaths[1]
+    db_k = filepaths[2]
+    db_d = filepaths[3]
+    paths = ((salt_f,), (no_exist, f'tests/{db_a}'), (no_exist, f'tests/{db_k}'), (no_exist, f'tests/{db_d}'))
     files = fh.get_files(paths)
     assert not files[1]
     assert files[0][1:] == tuple(Path(no_exist) for _ in range(3))
@@ -54,17 +65,10 @@ def test_get_files():
 
     # what if files did exists
     salt = fh.generate_salt(salt_f)
-    types = ('a', 'k', 'd')
-    for c in types:
-        f = open(f'test_{c}.db', 'w')
+    for file in filepaths[1:]:
+        f = open(file, 'w')
         f.close()
     files = fh.get_files(paths)
     assert files[1]
     assert files[0][0] == salt
-    assert files[0][1:] == tuple(Path(f'test_{c}.db').resolve() for c in types)
-
-    # remove files at the end
-    Path(salt_f).unlink()
-    Path(db_a).unlink()
-    Path(db_k).unlink()
-    Path(db_d).unlink()
+    assert files[0][1:] == tuple(Path(file).resolve() for file in filepaths[1:])
