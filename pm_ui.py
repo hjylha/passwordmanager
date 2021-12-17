@@ -8,6 +8,7 @@ from dbs import initiate_db, DB_auth, DB_keys, DB_password
 from pm_class import PM, is_valid_email
 from crypto_stuff import generate_password
 from file_handling import get_files
+import file_locations
 
 
 # some helpful fcns
@@ -181,20 +182,20 @@ class PM_UI():
 
     def __init__(self) -> None:
         self.pm = None
-        files, exists = get_files()
+        files, exists = get_files(file_locations.paths)
         if exists:
             self.pm = PM(files[0], DB_auth(files[1]), DB_keys(files[2]), DB_password(files[3]))
         print('Welcome to Password Manager')
     
     # re-init PM, only use this if it works
     def reconnect(self) -> None:
-        files, _ = get_files()
+        files, _ = get_files(file_locations.paths)
         self.pm = PM(files[0], DB_auth(files[1]), DB_keys(files[2]), DB_password(files[3]))
     
     # initializing password manager
     def initiate_pm(self) -> None:
         # setup the databases
-        files = get_files()[0]
+        files = get_files(file_locations.paths)[0]
         print('Initializing Password Manager databases...')
         initiate_db(files[1], 'auth')
         initiate_db(files[2], 'keys')
