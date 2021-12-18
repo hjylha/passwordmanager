@@ -87,9 +87,9 @@ class DB_auth(DB_general):
         # check that it contains the required stuff
         # TODO: maybe improve these
         if table_data[self.table][self.table] != self.tables[self.table]:
-            raise Exception('No auth table in the database.')
+            raise Exception(f'No table in database: {self.table}')
         if len(self.select_all(self.table)[0]) != 4:
-            raise Exception('Something is wrong with columns in auth table')
+            raise Exception(f'Something is wrong with columns in table: {self.table}')
 
     def check_uniqueness_of_keys(self) -> bool:
         keys = tuple(row[0] for row in self.select_columns(self.table, self.cols[1:]))
@@ -158,6 +158,14 @@ class DB_keys(DB_general):
         super().__init__(filepath_of_db)
         self.table_tuple = ('app_keys', 'email_keys', 'data_keys')
         self.cols = ('key', 'in_use', 'date_modified')
+        # check that db has tables and some rows in those tables
+        for table in self.table_tuple:
+            if table not in self.tables:
+                raise Exception(f'No table in database: {table}')
+            if self.cols != tuple(self.tables[table].keys()):
+                raise Exception(f'Something is wrong with columns in table: {table}')
+            if not self.select_all(table):
+                raise Exception(f'No rows in table: {table}')
     
     # add more dummy data
     def add_dummy_data(self, table_num: int, num_of_rows: int =10) -> None:
@@ -235,6 +243,13 @@ class DB_password(DB_general):
     def __init__(self, filepath_of_db) -> None:
         super().__init__(filepath_of_db)
         self.table_tuple = ('apps', 'emails', 'data')
+        for table in self.table_tuple:
+            if table not in self.tables:
+                raise Exception(f'No table in database: {table}')
+            if table_data['password'][table].keys() != self.tables[table].keys():
+                raise Exception(f'Something is wrong with columns in table: {table}')
+            if not self.select_all(table):
+                raise Exception(f'No rows in table: {table}')
     
     def add_dummy_data(self, data_type: int, num_of_rows: int =10):
         table = self.table_tuple[data_type]

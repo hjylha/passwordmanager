@@ -152,6 +152,41 @@ class TestInitiation():
     def test_initiate_db_fail(self, db):
         with pytest.raises(Exception):
             dbs.initiate_db(db.filepath, 'not a type')
+    
+    def test_init_DB_auth(self, db):
+        with pytest.raises(Exception):
+            DB_auth(db.filepath)
+        dbs.initiate_db(db.filepath, 'auth', 0)
+        with pytest.raises(Exception):
+            DB_auth(db.filepath)
+        dbs.initiate_db(db.filepath, 'auth', 1)
+        dba = DB_auth(db.filepath)
+        assert len(dba.select_all('auth')) == 1
+
+    def test_init_DB_keys(self, db):
+        with pytest.raises(Exception):
+            DB_keys(db.filepath)
+        dbs.initiate_db(db.filepath, 'keys', 0)
+        with pytest.raises(Exception):
+            DB_keys(db.filepath)
+        dbs.initiate_db(db.filepath, 'keys', 1)
+        dbk = DB_keys(db.filepath)
+        assert len(dbk.select_all('app_keys')) == 1
+        assert len(dbk.select_all('email_keys')) == 1
+        assert len(dbk.select_all('data_keys')) == 1
+    
+    def test_init_DB_pwd(self, db):
+        with pytest.raises(Exception):
+            DB_password(db.filepath)
+        dbs.initiate_db(db.filepath, 'password', 0)
+        with pytest.raises(Exception):
+            DB_password(db.filepath)
+        dbs.initiate_db(db.filepath, 'password', 1)
+        dbp = DB_password(db.filepath)
+        assert len(dbp.select_all('apps')) == 1
+        assert len(dbp.select_all('emails')) == 1
+        assert len(dbp.select_all('data')) == 1
+
 
 class TestDBauth():
 
