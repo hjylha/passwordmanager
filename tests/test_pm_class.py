@@ -10,15 +10,7 @@ from dbs import DB_auth, DB_keys, DB_password
 from pm_class import PM, is_valid_email, is_valid_url
 
 
-# get some dummy app names and email addresses
-# @pytest.fixture
-# def app_list():
-#     return [f'app{i}' for i in range(20)]
-
-# @pytest.fixture
-# def email_list():
-#     return [f'email{i}@provider.com' for i in range(20)]
-
+# some test inserts
 @pytest.fixture
 def password_info_lines():
     return [(f'user{i}', f'email{i}@provider.com', f'pwd{i}', f'app{i}', f'app{i}.net') for i in range(20)]
@@ -37,6 +29,9 @@ def pm_temp():
 @pytest.fixture
 def pm():
     db_path = Path(__file__).parent / 'test_db_pm.db'
+    if not db_path.exists():
+        for t in ('auth', 'keys', 'password'):
+            dbs.initiate_db(db_path, t)
     return PM(b'\xc1\x95\xe15=\tm\xef\xecTH\x8e\xf5;/l', DB_auth(db_path), DB_keys(db_path), DB_password(db_path))
 
 # db with master_key "active"
@@ -278,7 +273,7 @@ class TestPasswordManagement():
         # this makes it two apps, actually 3
         assert len(pm_w_stuff.get_name_list(0)) == 23
         # changed email makes it 4
-        assert len(pm_w_stuff.get_name_list(1)) == 24
+        assert len(pm_w_stuff.get_name_list(1)) == 23
 
     def test_update_password_data(self, pm_w_stuff):
         app = 'secret program'
@@ -312,3 +307,5 @@ class TestPasswordManagement():
         for r in rowids:
             pm_w_stuff.delete_password(r)
         assert pm_w_stuff.find_password(app) == []
+        # remove test db
+        pm_w_stuff.dba.filepath.unlink()
