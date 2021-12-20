@@ -38,10 +38,11 @@ def get_master_password() -> str:
         print('Passwords you typed are not the same. Please try again.')
 
 # ask for username and password
-def ask_for_username_and_password() -> tuple[str, str]:
-    username = getpass.getpass('Enter your username: ')
+def ask_for_password() -> tuple[str, str]:
+    # username = getpass.getpass('Enter your username: ')
     password = getpass.getpass('Enter the master password: ')
-    return (username, password)
+    return password
+    # return (username, password)
 
 
 # get the answer to a yes/no question from user, returns 'y' or 'n'

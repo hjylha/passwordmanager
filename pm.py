@@ -9,7 +9,7 @@ import getpass
 # from pm_data import default_db_filename, default_salt_filename
 # import pm_fcns as pm
 from pm_ui import PM_UI
-from pm_ui import clear_clipboard, clear_screen, yes_or_no_question, ask_for_username_and_password
+from pm_ui import clear_clipboard, clear_screen, yes_or_no_question, ask_for_password
 
 # ask to press enter, and clear clipboard
 def end_prompt():
@@ -33,9 +33,10 @@ def password_manager():
         else:
             exit()
     
-    un = 'placeholder username'
+    # un = 'placeholder username'
     if pm_ui.pm.master_key is None:
-        un, master_pw = ask_for_username_and_password()
+        # un, master_pw = ask_for_username_and_password()
+        master_pw = ask_for_password()
         if pm_ui.pm.check_master_password(master_pw):
             pm_ui.pm.set_name_lists()
         else:
@@ -45,7 +46,7 @@ def password_manager():
     # no need for master pw anymore
     master_pw = None
     clear_screen()
-    print(f'Password Manager for user {un}\n')
+    # print(f'Password Manager for user {un}\n')
 
     # the program loop
     while True:
