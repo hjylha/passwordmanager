@@ -25,7 +25,7 @@ def get_drives() -> list[str]:
     letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     return [f"{c}:" for c in letters if Path(f"{c}:").exists()]
 
-# get a bunch of folders where db files are searched from
+# get a bunch of (Windows) folders where db files are searched from
 def get_possible_starting_folders() -> tuple:
     environ_keys = ['APPDATA', 'LOCALAPPDATA', 'ONEDRIVE', 'PROGRAMFILES', 'PROGRAMFILES(X86)', 'PUBLIC', 'USERPROFILE']
     # environ_keys.append('HOMEPATH')
@@ -39,6 +39,9 @@ def get_possible_starting_folders() -> tuple:
 
 # find an existing path from above folders
 def find_path(path: str):
+    # if not in windows, do nothing
+    if os.name != 'nt':
+        return None
     possible_folders = get_possible_starting_folders()
     for folder in possible_folders:
         if Path(folder / path).exists():
