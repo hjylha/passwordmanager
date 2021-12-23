@@ -1,4 +1,6 @@
 from pathlib import Path
+import os
+
 from cryptography.fernet import Fernet
 import pytest
 
@@ -13,6 +15,10 @@ def pw():
 @pytest.fixture
 def salt():
     salt_path = Path(__file__).parent.parent / "salt.txt"
+    # if the salt file does not exist, create one
+    if not salt_path.exists():
+        with open(salt_path, 'wb') as s:
+            s.write(os.urandom(16))
     with open(salt_path, "rb") as s:
         salt = s.read()
     return salt
