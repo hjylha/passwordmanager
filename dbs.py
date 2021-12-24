@@ -19,7 +19,8 @@ def find_from_list(str_to_find: str, list_to_search: Iterable[tuple[int, str]], 
     return findings
 
 # generate a dummy encrypted string, key or has
-def generate_dummy_string(type_of_string: str, fernet_obj: Optional[Fernet] =None, password_hasher: Optional[cs.argon2.PasswordHasher] =None) -> str | bytes:
+# def generate_dummy_string(type_of_string: str, fernet_obj: Optional[Fernet] =None, password_hasher: Optional[cs.argon2.PasswordHasher] =None) -> str | bytes:
+def generate_dummy_string(type_of_string: str, fernet_obj: Optional[Fernet] =None, password_hasher: Optional[cs.argon2.PasswordHasher] =None):
     if type_of_string == 'normal':
         if fernet_obj is None:
             fernet_obj = Fernet(Fernet.generate_key())
@@ -36,7 +37,8 @@ def generate_dummy_string(type_of_string: str, fernet_obj: Optional[Fernet] =Non
         raise Exception('Invalid type of dummy data')
     
 # generating many rows of dummy data
-def generate_dummy_data(type_tuple: tuple[str], num_of_rows: int, fernet_obj: Optional[Fernet] =None, password_hasher: Optional[cs.argon2.PasswordHasher]=None) -> list[tuple[str | bytes]]:
+# def generate_dummy_data(type_tuple: tuple[str], num_of_rows: int, fernet_obj: Optional[Fernet] =None, password_hasher: Optional[cs.argon2.PasswordHasher]=None) -> list[tuple[str | bytes]]:
+def generate_dummy_data(type_tuple: tuple[str], num_of_rows: int, fernet_obj: Optional[Fernet] =None, password_hasher: Optional[cs.argon2.PasswordHasher]=None) -> list[tuple]:
     dummy_data = []
     for _ in range(num_of_rows):
         datarow = tuple(generate_dummy_string(t, fernet_obj, password_hasher) for t in type_tuple)
@@ -259,7 +261,8 @@ class DB_password(DB_general):
         self.insert_many(table, self.tables[table].keys(), dummy_data)
 
     # get list of data_type (0 = apps or 1 = emails)
-    def get_list(self, data_type: int, rows_and_keys: dict[int, bytes], w_rowid: bool = True) -> list[str] | list[tuple[int, str]]:
+    # def get_list(self, data_type: int, rows_and_keys: dict[int, bytes], w_rowid: bool = True) -> list[str] | list[tuple[int, str]]:
+    def get_list(self, data_type: int, rows_and_keys: dict[int, bytes], w_rowid: bool = True) -> list:
         if data_type not in (0, 1):
             raise Exception(f'Invalid data type: {data_type=}')
         all_data = self.select_all(self.table_tuple[data_type])
@@ -324,7 +327,8 @@ class DB_password(DB_general):
     
     # insert new password or update password data
     # data of the form {'username': str, 'email': int, 'password': str, 'app_name': int, 'url': str}
-    def insert_password_data(self, data: dict[str, str | int], row_and_key: dict[int, bytes]) -> None:
+    # def insert_password_data(self, data: dict[str, str | int], row_and_key: dict[int, bytes]) -> None:
+    def insert_password_data(self, data: dict, row_and_key: dict[int, bytes]) -> None:
         # add some zeros to mess with numbers for no reason
         if 'app_name' in data:
             data['app_name'] = ''.join(['0' for _ in range(cs.secrets.randbelow(23))] + [str(data['app_name'])])
