@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -32,12 +33,19 @@ def test_salt():
 
 # I only have the C drive
 def test_get_drives():
-    assert 'C:' in fh.get_drives()
+    if os.name == 'nt':
+        assert 'C:' in fh.get_drives()
+    else:
+        assert '/' in fh.get_drives()
 
 def test_get_possible_starting_folders():
     folders = fh.get_possible_starting_folders()
-    assert Path('C:/users/public') in folders
-    assert Path('C:/Program Files') in folders
+    if os.name == 'nt':
+        assert Path('C:/users/public') in folders
+        assert Path('C:/Program Files') in folders
+    else:
+        username = os.environ['USER']
+        assert Path(f'/home/{username}') in folders
 
 def test_find_path():
     filepath = 'tests/test_file_handling.py'

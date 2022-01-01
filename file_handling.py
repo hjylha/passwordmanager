@@ -22,15 +22,22 @@ def get_salt(salt_path) -> bytes:
 
 # get 
 def get_drives() -> list[str]:
-    letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    return [f"{c}:" for c in letters if Path(f"{c}:").exists()]
+    if os.name == 'nt':
+        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        return [f"{c}:" for c in letters if Path(f"{c}:").exists()]
+    else:
+        return ['/']
 
 # get a bunch of (Windows) folders where db files are searched from
 def get_possible_starting_folders() -> tuple:
-    environ_keys = ['APPDATA', 'LOCALAPPDATA', 'ONEDRIVE', 'PROGRAMFILES', 'PROGRAMFILES(X86)', 'PUBLIC', 'USERPROFILE']
+    if os.name == 'nt':
+        environ_keys = ['APPDATA', 'LOCALAPPDATA', 'ONEDRIVE', 'PROGRAMFILES', 'PROGRAMFILES(X86)', 'PUBLIC', 'USERPROFILE']
+    else:
+        environ_keys = ['HOME', 'PWD']
     # environ_keys.append('HOMEPATH')
     folders = [os.environ[key] for key in environ_keys]
-    folders += os.environ['PATH'].split(';')
+    if os.name == 'nt':
+        folders += os.environ['PATH'].split(';')
     folders += get_drives()
     p_folders = [Path(folder) for folder in folders]
     p_folders.append(Path(file_name).parent.resolve())
