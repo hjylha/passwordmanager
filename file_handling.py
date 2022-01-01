@@ -46,11 +46,6 @@ def get_possible_starting_folders() -> tuple:
 
 # find an existing path from above folders
 def find_path(path: str):
-    # if not on Windows, use given paths directly
-    if os.name != 'nt' and Path(path).exists():
-        return Path(path)
-    elif os.name != 'nt':
-        return None
     possible_folders = get_possible_starting_folders()
     for folder in possible_folders:
         if Path(folder / path).exists():
