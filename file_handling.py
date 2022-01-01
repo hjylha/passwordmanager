@@ -40,7 +40,10 @@ def get_possible_starting_folders() -> tuple:
         folders += os.environ['PATH'].split(';')
     folders += get_drives()
     p_folders = [Path(folder) for folder in folders]
+    # add the folder this file is in to the list
     p_folders.append(Path(file_name).parent.resolve())
+    # finally add the current work directory as well
+    p_folders.append(Path.cwd().resolve())
     return tuple(p_folders)
 
 
@@ -49,7 +52,7 @@ def find_path(path: str):
     possible_folders = get_possible_starting_folders()
     for folder in possible_folders:
         if Path(folder / path).exists():
-            return folder / path
+            return Path(folder / path).resolve()
     else:
         return None
 

@@ -13,7 +13,8 @@ import file_handling as fh
 # some filenames
 @pytest.fixture
 def filepaths():
-    paths = ('test_salt.txt', 'test_a.db', 'test_k.db', 'test_d.db')
+    paths0 = ('test_salt.txt', 'test_a.db', 'test_k.db', 'test_d.db')
+    paths = tuple(str(Path(__file__).parent / p) for p in paths0)
     yield paths
     for path in paths:
         if Path(path).exists():
@@ -46,6 +47,8 @@ def test_get_possible_starting_folders():
     else:
         username = os.environ['USER']
         assert Path(f'/home/{username}') in folders
+    # passwordmanager folder should always be here
+    assert Path(__file__).parent.parent in folders
 
 def test_find_path():
     filepath = 'tests/test_file_handling.py'
@@ -59,24 +62,21 @@ def test_find_path_from_list():
 
 def test_get_files(filepaths):
     salt_f = filepaths[0]
-    # types = ('a', 'k', 'd')
     # some nonexistent files
     no_exist = 'test_not_exist.txt'
-    db_a = filepaths[1]
-    db_k = filepaths[2]
-    db_d = filepaths[3]
-    paths = ((salt_f,), (no_exist, f'tests/{db_a}'), (no_exist, f'tests/{db_k}'), (no_exist, f'tests/{db_d}'))
+    paths = ((salt_f,), (no_exist, filepaths[1]), (no_exist, filepaths[2]), (no_exist, filepaths[3]))
     files = fh.get_files(paths)
     assert not files[1]
     assert files[0][1:] == tuple(Path(no_exist) for _ in range(3))
     assert len(files[0][0]) == 16
 
-    # what if files did exists
+    # what if files did exist
     salt = fh.generate_salt(salt_f)
     for file in filepaths[1:]:
         f = open(file, 'w')
         f.close()
     files = fh.get_files(paths)
+    # now we should find files
     assert files[1]
     assert files[0][0] == salt
     assert files[0][1:] == tuple(Path(file).resolve() for file in filepaths[1:])
