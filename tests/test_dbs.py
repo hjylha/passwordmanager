@@ -206,7 +206,7 @@ class TestDBauth():
         assert not dba.is_key_in_keys(e_key)
 
         # see what is in master key column
-        conn = sqlite3.connect('test_db_auth.db')
+        conn = sqlite3.connect(Path(__file__).parent / 'test_db_auth.db')
         cur = conn.cursor()
         cur.execute('SELECT master_key FROM auth')
         keys = cur.fetchall()
