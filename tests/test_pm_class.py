@@ -54,32 +54,29 @@ def pm_w_stuff(pm_w_master_key):
 
 
 # onto the testing
-def test_is_valid_email():
-    email = 'text@__fdfdfadfsadfa.lkjasdf'
-    assert is_valid_email(email)
-
-    email = 'big space@server.com'
-    assert not is_valid_email(email)
-
-    email = 'no_at_sign_but.con'
-    assert not is_valid_email(email)
-
-    email = 'too_many_@_signs_@q.w'
-    assert not is_valid_email(email)
-
-    email = 'one.but@not_on_the_right_side'
-    assert not is_valid_email(email)
+# first fcns checking validity of email and url
+class TestValidators():
+    @pytest.mark.parametrize(
+        'email, is_valid', [
+            ('text@__fdfdfadfsadfa.lkjasdf', True),
+            ('big space@server.com', False),
+            ('no_at_sign_but.con', False),
+            ('too_many_@_signs_@q.w', False),
+            ('one.but@not_on_the_right_side', False)]
+    )
+    def test_is_valid_email(self, email, is_valid):
+        assert is_valid_email(email) == is_valid
 
 
-def test_is_valid_url():
-    url = 'place.after_dot'
-    assert is_valid_url(url)
-
-    url = 'big space.com'
-    assert not is_valid_url(url)
-
-    url = 'something_is_missing'
-    assert not is_valid_url(url)
+    @pytest.mark.parametrize(
+        'url, is_valid', [
+            ('place.after_dot', True),
+            ('big space.com', False),
+            ('something_is_missing', False)
+        ]
+    )
+    def test_is_valid_url(self, url, is_valid):
+        assert is_valid_url(url) == is_valid
 
 
 
@@ -313,5 +310,6 @@ class TestPasswordManagement():
         for r in rowids:
             pm_w_stuff.delete_password(r)
         assert pm_w_stuff.find_password(app) == []
+
         # remove test db
         pm_w_stuff.dba.filepath.unlink()
