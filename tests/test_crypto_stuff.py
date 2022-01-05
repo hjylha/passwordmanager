@@ -38,6 +38,7 @@ def test_do_crypto_stuff(pw, salt):
         assert isinstance(cs.do_crypto_stuff(pw, salt, num_of_iter), cs.Fernet)
 
 
+# result of encryption is different each time
 def test_encrypt_text(fernet_thing):
     text = "very secret"
     encryptions = [text]
@@ -77,6 +78,7 @@ def test_decrypt_text_list(fernet_thing):
     assert text_list == cs.decrypt_text_list(e_text_list, fernet_thing)
 
 
+# not quite sure what to test here
 def test_hash_text(salt, iteration_num):
     text = "all good"
     hashed_text = cs.hash_text(text, salt, iteration_num)
@@ -93,7 +95,9 @@ def test_create_hash_storage(salt, iteration_num):
 
 def test_hash_password():
     pwd = "s3cur3 p455w0rd"
-    assert isinstance(cs.hash_password(pwd), str)
+    hashed_pwd = cs.hash_password(pwd)
+    assert isinstance(hashed_pwd, str)
+    assert pwd not in hashed_pwd
 
 def test_check_password_hash():
     pwd = "s3cur3 p455w0rd"
@@ -118,21 +122,22 @@ def test_check_tuple():
     assert not cs.check_tuple(hashed_tuple, something_else)
 
 
-def test_get_characters():
+@pytest.mark.parametrize(
+    'chars', [
+        'abcdefghijklmnopqrstuvwxyz',
+        'abcdefghijklmnopqrstuvwxyz'.upper(),
+        '0123456789',
+        '(,._-*~"<>/|!@#$%^&)+=']
+)
+def test_get_characters(chars):
     all_chars = cs.get_characters()
     some_chars = cs.get_characters(1)
-    letters = "abcdefghijklmnopqrstuvwxyz"
-    numbers = "0123456789"
-    extra_chars = '(,._-*~"<>/|!@#$%^&)+='
-    assert letters in all_chars
-    assert letters in some_chars
-    assert letters.upper() in all_chars
-    assert letters.upper() in some_chars
-    assert numbers in all_chars
-    assert numbers in some_chars
-    assert extra_chars in all_chars
-    for char in extra_chars:
-        assert char not in some_chars
+    assert chars in all_chars
+    if '(' in chars:
+        for char in chars:
+            assert char not in some_chars
+    else:
+        chars in some_chars
 
 
 def test_generate_password():
