@@ -9,7 +9,7 @@ from db_general import DB_general
 # DB_general for testing
 @pytest.fixture
 def db():
-    db_path = Path('test_db.db')
+    db_path = Path(__file__).parent / 'test_db.db'
     yield DB_general(db_path)
     db_path.unlink()
 
@@ -343,7 +343,7 @@ def test_create_csv_file(db1):
 
 @pytest.fixture
 def db_backup():
-    db_path = Path('test_db_backup.db')
+    db_path = Path(__file__).parent / 'test_db_backup.db'
     yield DB_general(db_path)
     db_path.unlink()
 

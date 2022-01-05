@@ -32,14 +32,14 @@ def rows_and_keys():
 # 'empty' db
 @pytest.fixture
 def db():
-    db_path = Path('test_db.db')
+    db_path = Path(__file__).parent / 'test_db.db'
     yield dbs.DB_general(db_path)
     db_path.unlink()
 
 # test auth db
 @pytest.fixture
 def dba():
-    db_path = Path('test_db_auth.db')
+    db_path = Path(__file__).parent / 'test_db_auth.db'
     if not db_path.exists():
         dbs.initiate_db(db_path, 'auth')
     return DB_auth(db_path)
@@ -47,7 +47,7 @@ def dba():
 # test key db
 @pytest.fixture
 def dbk():
-    db_path = Path('test_db_keys.db')
+    db_path = Path(__file__).parent / 'test_db_keys.db'
     if not db_path.exists():
         dbs.initiate_db(db_path, 'keys')
     return DB_keys(db_path)
@@ -55,7 +55,7 @@ def dbk():
 # test password data db
 @pytest.fixture
 def dbp():
-    db_path = Path('test_db_pwd.db')
+    db_path = Path(__file__).parent / 'test_db_pwd.db'
     if not db_path.exists():
         dbs.initiate_db(db_path, 'password')
     return DB_password(db_path)
