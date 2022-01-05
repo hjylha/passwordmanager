@@ -114,43 +114,45 @@ def test_select_columns(db):
     # trying to select from nonexistent table
     assert db.select_columns('non_existing', ('Not', 'Existing')) is None
 
-def test_select_columns_by_column_value(db):
+
+@pytest.mark.parametrize(
+    'columns, columns_condition, condition_value', [
+        (('table_name',), ('table_name',), ('tables',)),
+        (('table_name', 'column_data'), ('table_name',), ('tables',)),
+        (('table_name', 'column_data'), ('table_name', 'column_data'), ('tables', '(table_name, (TEXT, NOT NULL, UNIQUE)), (column_data, (TEXT, NOT NULL))'))
+    ]
+)
+def test_select_columns_by_column_value(columns, columns_condition, condition_value, db):
     table = 'tables'
-    columns = ('table_name',)
-    columns_condition = ('table_name',)
-    condition_value = ('tables',)
     selection = db.select_columns_by_column_value(table, columns, columns_condition, condition_value)
-    assert table in selection[0]
+    # assert table in selection[0]
     assert selection[0][0] == table
-    # trying to select from nonexistent table
+    if len(columns) > 1:
+        assert 'table_name' in selection[0][1] and 'column_data' in selection[0][1]
+
+# trying to select from nonexistent table
+def test_select_columns_by_column_value_nonexistent(db):
     assert db.select_columns_by_column_value('non_existing', ('Not', 'Existing'), ('Not',), (1,)) is None
 
-    columns = ('table_name', 'column_data')
-    selection = db.select_columns_by_column_value(table, columns, columns_condition, condition_value)
-    assert table in selection[0]
-    assert 'table_name' in selection[0][1]
-
-    columns_condition = ('table_name', 'column_data')
-    condition_value = (table, '(table_name, (TEXT, NOT NULL, UNIQUE)), (column_data, (TEXT, NOT NULL))')
-    assert table in selection[0]
-    assert 'column_data' in selection[0][1]
-    
 
 def test_insert(db):
     table = 'tables'
     columns = ('table_name', 'column_data')
     data = ('test_name', 'not valid column data here')
+
     db.insert(table, columns, data)
 
     # select content and see if inserted data is there
     content = db.select_columns(table, columns)
     the_rows = [row for row in content if 'test_name' in row]
     assert the_rows[0][1] == 'not valid column data here'
+
     # not sure if it is necessary to remove this row, but let's do it anyway
     conn, cur = db.connect()
     with conn:
         cur.execute('DELETE FROM tables WHERE table_name = ? AND column_data = ?', data)
     conn.close()
+
     # trying to insert to a nonexistent table
     with pytest.raises(db_general.sqlite3.OperationalError):
         db.insert('nonexistent', ('nothing',), (0,))
@@ -160,6 +162,7 @@ def test_insert_many(db):
     columns = ('table_name', 'column_data')
     search_name = 'searchable'
     data = (('name1', search_name), ('name2', search_name), ('name3', search_name))
+
     db.insert_many(table, columns, data)
 
     content = db.select_columns(table, columns)
@@ -169,12 +172,13 @@ def test_insert_many(db):
 
     # trying to insert to a nonexistent table
     with pytest.raises(db_general.sqlite3.OperationalError):
-        db.insert('nonexistent', ('nothing',), ((0,),(1,)))
+        db.insert_many('nonexistent', ('nothing',), ((0,),(1,)))
 
 
 def test_create_table(db):
     table = 'New_Table'
     column_data = {'Col1': ('TEXT', 'NOT NULL', 'UNIQUE'), 'Col2': ('INTEGER')}
+    
     db.create_table(table, column_data)
 
     # this table should have been inserted to 'tables' table
