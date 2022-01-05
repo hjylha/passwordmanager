@@ -10,6 +10,10 @@ from dbs import DB_auth, DB_keys, DB_password
 from pm_class import PM, is_valid_email, is_valid_url
 
 
+@pytest.fixture
+def default_salt():
+    return b'\xc1\x95\xe15=\tm\xef\xecTH\x8e\xf5;/l'
+
 # some test inserts
 @pytest.fixture
 def password_info_lines():
@@ -27,12 +31,12 @@ def pm_temp():
 
 # "proper" db
 @pytest.fixture
-def pm():
+def pm(default_salt):
     db_path = Path(__file__).parent / 'test_db_pm.db'
     if not db_path.exists():
         for t in ('auth', 'keys', 'password'):
             dbs.initiate_db(db_path, t)
-    return PM(b'\xc1\x95\xe15=\tm\xef\xecTH\x8e\xf5;/l', DB_auth(db_path), DB_keys(db_path), DB_password(db_path))
+    return PM(default_salt, DB_auth(db_path), DB_keys(db_path), DB_password(db_path))
 
 # db with master_key "active"
 @pytest.fixture
@@ -48,6 +52,8 @@ def pm_w_stuff(pm_w_master_key):
     pm_w_master_key.set_name_lists()
     return pm_w_master_key
 
+
+# onto the testing
 def test_is_valid_email():
     email = 'text@__fdfdfadfsadfa.lkjasdf'
     assert is_valid_email(email)
