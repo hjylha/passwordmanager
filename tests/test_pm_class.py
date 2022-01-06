@@ -10,7 +10,7 @@ from dbs import DB_auth, DB_keys, DB_password
 from pm_class import PM, is_valid_email, is_valid_url
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def default_salt():
     return b'\xc1\x95\xe15=\tm\xef\xecTH\x8e\xf5;/l'
 
@@ -30,16 +30,18 @@ def pm_temp():
     db_path.unlink()
 
 # "proper" db
-@pytest.fixture
+@pytest.fixture(scope='module')
 def pm(default_salt):
     db_path = Path(__file__).parent / 'test_db_pm.db'
     if not db_path.exists():
         for t in ('auth', 'keys', 'password'):
             dbs.initiate_db(db_path, t)
-    return PM(default_salt, DB_auth(db_path), DB_keys(db_path), DB_password(db_path))
+    yield PM(default_salt, DB_auth(db_path), DB_keys(db_path), DB_password(db_path))
+    # remove db after testing
+    db_path.unlink()
 
 # db with master_key "active"
-@pytest.fixture
+@pytest.fixture(scope='module')
 def pm_w_master_key(pm):
     master_password = '0K_p455w0rd'
     if not pm.check_master_password(master_password):
@@ -47,10 +49,11 @@ def pm_w_master_key(pm):
     return pm
 
 # db with other stuff as well
-@pytest.fixture
+@pytest.fixture(scope='module')
 def pm_w_stuff(pm_w_master_key):
     pm_w_master_key.set_name_lists()
     return pm_w_master_key
+    # pm_w_master_key.dba.filepath.unlink()
 
 
 # onto the testing
@@ -310,6 +313,3 @@ class TestPasswordManagement():
         for r in rowids:
             pm_w_stuff.delete_password(r)
         assert pm_w_stuff.find_password(app) == []
-
-        # remove test db
-        pm_w_stuff.dba.filepath.unlink()

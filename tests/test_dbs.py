@@ -37,28 +37,31 @@ def db():
     db_path.unlink()
 
 # test auth db
-@pytest.fixture
+@pytest.fixture(scope='class')
 def dba():
     db_path = Path(__file__).parent / 'test_db_auth.db'
     if not db_path.exists():
         dbs.initiate_db(db_path, 'auth')
-    return DB_auth(db_path)
+    yield DB_auth(db_path)
+    db_path.unlink()
 
 # test key db
-@pytest.fixture
+@pytest.fixture(scope='class')
 def dbk():
     db_path = Path(__file__).parent / 'test_db_keys.db'
     if not db_path.exists():
         dbs.initiate_db(db_path, 'keys')
-    return DB_keys(db_path)
+    yield DB_keys(db_path)
+    db_path.unlink()
 
 # test password data db
-@pytest.fixture
+@pytest.fixture(scope='class')
 def dbp():
     db_path = Path(__file__).parent / 'test_db_pwd.db'
     if not db_path.exists():
         dbs.initiate_db(db_path, 'password')
-    return DB_password(db_path)
+    yield DB_password(db_path)
+    db_path.unlink()
 
 
 class TestSearch():
