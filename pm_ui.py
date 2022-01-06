@@ -183,14 +183,14 @@ class PM_UI():
 
     def __init__(self) -> None:
         self.pm = None
-        files, exists = get_files(file_locations.paths)
+        files, exists, _ = get_files(file_locations.paths)
         if exists:
             self.pm = PM(files[0], DB_auth(files[1]), DB_keys(files[2]), DB_password(files[3]))
         print('Welcome to Password Manager')
     
     # re-init PM, only use this if it works
     def reconnect(self) -> None:
-        files, _ = get_files(file_locations.paths)
+        files, _, _ = get_files(file_locations.paths)
         self.pm = PM(files[0], DB_auth(files[1]), DB_keys(files[2]), DB_password(files[3]))
     
     # initializing password manager
