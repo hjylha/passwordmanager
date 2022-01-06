@@ -58,7 +58,12 @@ def test_find_path():
 
 def test_find_path_from_list():
     path_list = ('tests/not existing file.ext', 'tests/test_file_handling.py')
-    assert fh.find_path_from_list(path_list) == Path(__file__).resolve()
+    assert fh.find_path_from_list(path_list) == (Path(__file__).resolve(), 1)
+
+def test_find_all_paths_from_list():
+    path_list = ('tests/not existing file.ext', 'tests/test_file_handling.py', 'file_handling.py')
+    assert fh.find_all_paths_from_list(path_list) == ((Path(__file__).resolve(), 1), (Path(__file__).parent.parent.resolve() / 'file_handling.py', 2))
+
 
 def test_get_files(filepaths):
     salt_f = filepaths[0]
@@ -68,6 +73,7 @@ def test_get_files(filepaths):
     files = fh.get_files(paths)
     assert not files[1]
     assert files[0][1:] == tuple(Path(no_exist) for _ in range(3))
+    assert files[2] == (0, 0, 0, 0)
     assert len(files[0][0]) == 16
 
     # what if files did exist
@@ -80,3 +86,4 @@ def test_get_files(filepaths):
     assert files[1]
     assert files[0][0] == salt
     assert files[0][1:] == tuple(Path(file).resolve() for file in filepaths[1:])
+    assert files[2] == (0, 1, 1, 1)
