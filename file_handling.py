@@ -83,9 +83,10 @@ def get_files(salt_and_akd_paths: tuple[tuple[str], tuple[str], tuple[str], tupl
     if not salt_path:
         salt_exists = False
         salt_path = (Path(salt_and_akd_paths[0][0]), 0)
-        if not salt_path[0].parent.exists():
-            salt_path[0].parent.mkdir(parents=True, exist_ok=True)
-        generate_salt(salt_path[0])
+        if not salt_path[0].exists():
+            if not salt_path[0].parent.exists():
+                salt_path[0].parent.mkdir(parents=True, exist_ok=True)
+            generate_salt(salt_path[0])
     salt = get_salt(salt_path[0])
     # indices.append(salt_path[1])
     # dbs
