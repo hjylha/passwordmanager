@@ -3,9 +3,8 @@ import sys
 from pathlib import Path
 # from typing import Optional
 
-import file_locations
-
-file_name = __file__
+# not sure if there is a better way to make sure fcns use filepath of this file
+file_handling_filename = __file__
 
 
 # generate random string of bytes and store it in a file
@@ -41,7 +40,7 @@ def get_possible_starting_folders() -> tuple:
     folders += get_drives()
     p_folders = [Path(folder) for folder in folders]
     # add the folder this file is in to the list
-    p_folders.append(Path(file_name).parent.resolve())
+    p_folders.append(Path(file_handling_filename).parent.resolve())
     # finally add the current work directory as well
     p_folders.append(Path.cwd().resolve())
     return tuple(p_folders)
@@ -75,18 +74,20 @@ def find_all_paths_from_list(path_list):
         return tuple(paths)
     return None
 
-def get_files(salt_and_akd_paths: tuple[tuple[str], tuple[str], tuple[str], tuple[str]], default_is_ok: bool =True) -> tuple[tuple, bool, tuple[int]]:
+def get_files(salt_and_akd_paths: tuple[tuple[str], tuple[str], tuple[str], tuple[str]], default_is_ok: bool =True) -> tuple[tuple, bool]:
     # remember which paths are found (if they are all 0, it means default)
-    indices = []
+    # indices = []
     # salt
+    salt_exists = True
     salt_path = find_path_from_list(salt_and_akd_paths[0], default_is_ok)
     if not salt_path:
+        salt_exists = False
         salt_path = (Path(salt_and_akd_paths[0][0]), 0)
         if not salt_path[0].parent.exists():
             salt_path[0].parent.mkdir(parents=True, exist_ok=True)
         generate_salt(salt_path[0])
     salt = get_salt(salt_path[0])
-    indices.append(salt_path[1])
+    # indices.append(salt_path[1])
     # dbs
     exists = False
     db_paths = [find_path_from_list(path_tuple, default_is_ok) for path_tuple in salt_and_akd_paths[1:]]
@@ -97,7 +98,7 @@ def get_files(salt_and_akd_paths: tuple[tuple[str], tuple[str], tuple[str], tupl
         paths = []
         exists = True
         for path, i in db_paths:
-            indices.append(i)
+            # indices.append(i)
             paths.append(path)
         auth_path, keys_path, data_path = tuple(paths)
     else:
@@ -105,7 +106,7 @@ def get_files(salt_and_akd_paths: tuple[tuple[str], tuple[str], tuple[str], tupl
         auth_path = Path(salt_and_akd_paths[1][0])
         keys_path = Path(salt_and_akd_paths[2][0])
         data_path = Path(salt_and_akd_paths[3][0])
-        indices += [0, 0, 0]
+        # indices += [0, 0, 0]
     # exists = auth_path.exists() and keys_path.exists() and data_path.exists()
-    return ((salt, auth_path, keys_path, data_path), exists, tuple(indices))
+    return ((salt, auth_path, keys_path, data_path), exists and salt_exists)  #, tuple(indices))
     
