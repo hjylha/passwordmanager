@@ -25,13 +25,7 @@ def password_manager():
     pm_ui = PM_UI()
 
     if pm_ui.pm is None:
-        print('Not all the necessary files are present.')
-        ans = yes_or_no_question('Do you want to initialize the Password Manager?')
-        if ans.lower() == 'y':
-            pm_ui.initiate_pm()
-            clear_screen()
-        else:
-            exit()
+        exit()
     
     # un = 'placeholder username'
     if pm_ui.pm.master_key is None:

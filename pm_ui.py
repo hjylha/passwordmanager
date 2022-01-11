@@ -4,11 +4,12 @@ from typing import Optional
 
 import pyperclip
 
-from dbs import initiate_db, DB_auth, DB_keys, DB_password
+# from dbs import initiate_db, DB_auth, DB_keys, DB_password
 from pm_class import PM, is_valid_email
+from pm_connect import connect_to_pm_dbs
 from crypto_stuff import generate_password
-from file_handling import get_files
-import file_locations
+# from file_handling import get_files
+# import file_locations
 
 
 # some helpful fcns
@@ -182,31 +183,45 @@ def obtain_password(info: tuple[int, str, str, str, str, str], reveal_pw: bool) 
 class PM_UI():
 
     def __init__(self) -> None:
-        self.pm = None
-        files, exists = get_files(file_locations.paths)
-        if exists:
-            self.pm = PM(files[0], DB_auth(files[1]), DB_keys(files[2]), DB_password(files[3]))
-        print('Welcome to Password Manager')
+        self.pm = connect_to_pm_dbs(False, False)
+        
+        if not self.pm:
+            print('Normal files not found.')
+            self.pm = connect_to_pm_dbs(True, False)
+            if self.pm:
+                a = yes_or_no_question('Do you want to use default files?')
+                if a.lower() == 'n':
+                    self.pm = None
+            if not self.pm:
+                ans = yes_or_no_question('Do you want to initialize the Password Manager?')
+                if ans.lower() == 'y':
+                        print('Initializing Password Manager databases...')
+                        self.pm = connect_to_pm_dbs(True, True)
+                        print('Password database initialized.')
+                        master_password = get_master_password()
+                        self.pm.add_master_password(master_password)
+                        self.pm.set_name_lists()
     
     # re-init PM, only use this if it works
     def reconnect(self) -> None:
-        files, _ = get_files(file_locations.paths)
-        self.pm = PM(files[0], DB_auth(files[1]), DB_keys(files[2]), DB_password(files[3]))
+        self.pm = connect_to_pm_dbs(False, False)
+        # files, _ = get_files(file_locations.paths)
+        # self.pm = PM(files[0], DB_auth(files[1]), DB_keys(files[2]), DB_password(files[3]))
     
     # initializing password manager
-    def initiate_pm(self) -> None:
-        # setup the databases
-        files = get_files(file_locations.paths)[0]
-        print('Initializing Password Manager databases...')
-        initiate_db(files[1], 'auth')
-        initiate_db(files[2], 'keys')
-        initiate_db(files[3], 'password')
-        self.pm = PM(files[0], DB_auth(files[1]), DB_keys(files[2]), DB_password(files[3]))
-        print('Password database initialized.')
-        # get master password from user
-        master_password = get_master_password()
-        self.pm.add_master_password(master_password)
-        self.pm.set_name_lists()
+    # def initiate_pm(self) -> None:
+    #     # setup the databases
+    #     files = get_files(file_locations.paths)[0]
+    #     print('Initializing Password Manager databases...')
+    #     initiate_db(files[1], 'auth')
+    #     initiate_db(files[2], 'keys')
+    #     initiate_db(files[3], 'password')
+    #     self.pm = PM(files[0], DB_auth(files[1]), DB_keys(files[2]), DB_password(files[3]))
+    #     print('Password database initialized.')
+    #     # get master password from user
+    #     master_password = get_master_password()
+    #     self.pm.add_master_password(master_password)
+    #     self.pm.set_name_lists()
     
     
     # back to established PM stuff
