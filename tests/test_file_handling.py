@@ -68,7 +68,7 @@ def test_find_all_paths_from_list():
 def test_get_files(filepaths):
     salt_f = filepaths[0]
     # some nonexistent files
-    no_exist = 'test_not_exist.txt'
+    no_exist = Path(__file__).parent / 'test_not_exist.txt'
     paths = ((salt_f,), (no_exist, filepaths[1]), (no_exist, filepaths[2]), (no_exist, filepaths[3]))
     files = fh.get_files(paths)
     assert not files[1]

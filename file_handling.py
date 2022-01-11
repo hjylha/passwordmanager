@@ -82,7 +82,7 @@ def get_files(salt_and_akd_paths: tuple[tuple[str], tuple[str], tuple[str], tupl
     salt_path = find_path_from_list(salt_and_akd_paths[0], default_is_ok)
     if not salt_path:
         salt_exists = False
-        salt_path = (Path(salt_and_akd_paths[0][0]), 0)
+        salt_path = (Path(file_handling_filename).parent / salt_and_akd_paths[0][0], 0)
         if not salt_path[0].exists():
             if not salt_path[0].parent.exists():
                 salt_path[0].parent.mkdir(parents=True, exist_ok=True)
@@ -104,9 +104,15 @@ def get_files(salt_and_akd_paths: tuple[tuple[str], tuple[str], tuple[str], tupl
         auth_path, keys_path, data_path = tuple(paths)
     else:
         # if a db is not found revert to default filepaths
-        auth_path = Path(salt_and_akd_paths[1][0])
-        keys_path = Path(salt_and_akd_paths[2][0])
-        data_path = Path(salt_and_akd_paths[3][0])
+        auth_path = Path(file_handling_filename).parent / salt_and_akd_paths[1][0]
+        if not auth_path.parent.exists():
+            auth_path.parent.mkdir(parents=True, exist_ok=True)
+        keys_path = Path(file_handling_filename).parent / salt_and_akd_paths[2][0]
+        if not keys_path.parent.exists():
+            keys_path.parent.mkdir(parents=True, exist_ok=True)
+        data_path = Path(file_handling_filename).parent / salt_and_akd_paths[3][0]
+        if not data_path.parent.exists():
+            data_path.parent.mkdir(parents=True, exist_ok=True)
         # indices += [0, 0, 0]
     # exists = auth_path.exists() and keys_path.exists() and data_path.exists()
     return ((salt, auth_path, keys_path, data_path), exists and salt_exists)  #, tuple(indices))
