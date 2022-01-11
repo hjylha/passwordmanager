@@ -13,21 +13,26 @@ from dbs import DB_auth, DB_keys, DB_password
 
 
 # salt
-@pytest.fixture
+@pytest.fixture(scope='module')
 def salt():
-    return b'SBHe5zI8OkN94rsVHSZE3dwAvimz-ukl11ONcJgEAbo='
+    return dbs.Fernet.generate_key()
+    # return b'SBHe5zI8OkN94rsVHSZE3dwAvimz-ukl11ONcJgEAbo='
 
 # master key
-@pytest.fixture
+@pytest.fixture(scope='module')
 def master_key():
-    return b'GJbXfxE9MjLNcVUlP3uYm3qziEJY6IJARBbWsu1Y8ac='
+    return dbs.Fernet.generate_key()
+    # return b'GJbXfxE9MjLNcVUlP3uYm3qziEJY6IJARBbWsu1Y8ac='
 
 # some rowids and keys
-@pytest.fixture
+@pytest.fixture(scope='module')
 def rows_and_keys():
-    return {1: b'LCXUP0NV1rBDawSLHy9soxhYA8Mo5dBR1-icCsMrq_Q=',
-            3: b'u6ztSn24XJDRQNZlEZdLJ2bpQeXuCq2vtanG-cjZvuc=',
-            6: b'7j0pRSoSV1AeDpddhNX9FdHuVWQtK5QkXHpnE7ePj3o='}
+    return {1: dbs.Fernet.generate_key(),
+            3: dbs.Fernet.generate_key(),
+            6: dbs.Fernet.generate_key()}
+    # return {1: b'LCXUP0NV1rBDawSLHy9soxhYA8Mo5dBR1-icCsMrq_Q=',
+            # 3: b'u6ztSn24XJDRQNZlEZdLJ2bpQeXuCq2vtanG-cjZvuc=',
+            # 6: b'7j0pRSoSV1AeDpddhNX9FdHuVWQtK5QkXHpnE7ePj3o='}
 
 # 'empty' db
 @pytest.fixture
@@ -143,23 +148,36 @@ class TestInitiation():
         path.unlink()
         path.parent.rmdir()
 
-    def test_initiate_auth_db(self, db):
-        dba = dbs.initiate_db(db.filepath, 'auth')
-        assert len(dba.select_all('auth')) == 10
+    @pytest.mark.parametrize(
+        'num_of_dummies', [
+            0, 1, 10, 20
+        ]
+    )
+    def test_initiate_auth_db(self, db, num_of_dummies):
+        dba = dbs.initiate_db(db.filepath, 'auth', num_of_dummies)
+        assert len(dba.select_all('auth')) == num_of_dummies
 
-    def test_initiate_keys_db(self, db):
-        num = 20
-        dbk = dbs.initiate_db(db.filepath, 'keys', num)
-        assert len(dbk.select_all('app_keys')) == num
-        assert len(dbk.select_all('email_keys')) == num
-        assert len(dbk.select_all('data_keys')) == num
+    @pytest.mark.parametrize(
+        'num_of_dummies', [
+            0, 1, 10, 20
+        ]
+    )
+    def test_initiate_keys_db(self, db, num_of_dummies):
+        dbk = dbs.initiate_db(db.filepath, 'keys', num_of_dummies)
+        assert len(dbk.select_all('app_keys')) == num_of_dummies
+        assert len(dbk.select_all('email_keys')) == num_of_dummies
+        assert len(dbk.select_all('data_keys')) == num_of_dummies
 
-    def test_initiate_password_db(self, db):
-        num = 20
-        dbp = dbs.initiate_db(db.filepath, 'password', num)
-        assert len(dbp.select_all('apps')) == num
-        assert len(dbp.select_all('emails')) == num
-        assert len(dbp.select_all('data')) == num
+    @pytest.mark.parametrize(
+        'num_of_dummies', [
+            0, 1, 10, 20
+        ]
+    )
+    def test_initiate_password_db(self, db, num_of_dummies):
+        dbp = dbs.initiate_db(db.filepath, 'password', num_of_dummies)
+        assert len(dbp.select_all('apps')) == num_of_dummies
+        assert len(dbp.select_all('emails')) == num_of_dummies
+        assert len(dbp.select_all('data')) == num_of_dummies
     
     def test_initiate_db_fail(self, db):
         with pytest.raises(Exception):
@@ -167,34 +185,28 @@ class TestInitiation():
     
     def test_init_DB_auth(self, db):
         with pytest.raises(Exception):
-            DB_auth(db.filepath)
-        dbs.initiate_db(db.filepath, 'auth', 0)
-        with pytest.raises(Exception):
-            DB_auth(db.filepath)
+            DB_auth(db.filepath, 0)
+        
         dbs.initiate_db(db.filepath, 'auth', 1)
-        dba = DB_auth(db.filepath)
+        dba = DB_auth(db.filepath, 1)
         assert len(dba.select_all('auth')) == 1
 
     def test_init_DB_keys(self, db):
         with pytest.raises(Exception):
-            DB_keys(db.filepath)
-        dbs.initiate_db(db.filepath, 'keys', 0)
-        with pytest.raises(Exception):
-            DB_keys(db.filepath)
+            DB_keys(db.filepath, 0)
+        
         dbs.initiate_db(db.filepath, 'keys', 1)
-        dbk = DB_keys(db.filepath)
+        dbk = DB_keys(db.filepath, 1)
         assert len(dbk.select_all('app_keys')) == 1
         assert len(dbk.select_all('email_keys')) == 1
         assert len(dbk.select_all('data_keys')) == 1
     
     def test_init_DB_pwd(self, db):
         with pytest.raises(Exception):
-            DB_password(db.filepath)
-        dbs.initiate_db(db.filepath, 'password', 0)
-        with pytest.raises(Exception):
-            DB_password(db.filepath)
+            DB_password(db.filepath, 0)
+        
         dbs.initiate_db(db.filepath, 'password', 1)
-        dbp = DB_password(db.filepath)
+        dbp = DB_password(db.filepath, 1)
         assert len(dbp.select_all('apps')) == 1
         assert len(dbp.select_all('emails')) == 1
         assert len(dbp.select_all('data')) == 1

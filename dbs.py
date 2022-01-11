@@ -81,15 +81,18 @@ class PasswordNotFoundError(Exception):
 
 class DB_auth(DB_general):
 
-    def __init__(self, filepath_of_db) -> None:
+    def __init__(self, filepath_of_db, num_of_dummy_inserts: int = 10) -> None:
         super().__init__(filepath_of_db)
         self.table = 'auth'
         self.cols = ('hash', 'master_key', 'date_modified')
         self.length = len(self.select_all(self.table))
         # check that it contains the required stuff
         # TODO: maybe improve these
-        if table_data[self.table][self.table] != self.tables[self.table]:
-            raise Exception(f'No table in database: {self.table}')
+        selection = self.select_all(self.table)
+        if not selection:
+            initiate_db(self.filepath, 'auth', num_of_dummy_inserts)
+        if num := (num_of_dummy_inserts - len(selection)) > 0:
+            initiate_db(self.filepath, 'auth', num)
         if len(self.select_all(self.table)[0]) != 4:
             raise Exception(f'Something is wrong with columns in table: {self.table}')
 
@@ -156,14 +159,18 @@ class DB_auth(DB_general):
 
 class DB_keys(DB_general):
 
-    def __init__(self, filepath_of_db) -> None:
+    def __init__(self, filepath_of_db, num_of_dummy_inserts: int = 10) -> None:
         super().__init__(filepath_of_db)
         self.table_tuple = ('app_keys', 'email_keys', 'data_keys')
         self.cols = ('key', 'in_use', 'date_modified')
         # check that db has tables and some rows in those tables
         for table in self.table_tuple:
-            if table not in self.tables:
-                raise Exception(f'No table in database: {table}')
+            selection = self.select_all(table)
+            if not selection:
+                initiate_db(self.filepath, 'keys', num_of_dummy_inserts)
+                # raise Exception(f'No table in database: {table}')
+            if num := (num_of_dummy_inserts - len(selection)) > 0:
+                initiate_db(self.filepath, 'keys', num)
             if self.cols != tuple(self.tables[table].keys()):
                 raise Exception(f'Something is wrong with columns in table: {table}')
             if not self.select_all(table):
@@ -242,12 +249,16 @@ class DB_keys(DB_general):
 
 class DB_password(DB_general):
 
-    def __init__(self, filepath_of_db) -> None:
+    def __init__(self, filepath_of_db, num_of_dummy_inserts: int = 10) -> None:
         super().__init__(filepath_of_db)
         self.table_tuple = ('apps', 'emails', 'data')
         for table in self.table_tuple:
-            if table not in self.tables:
-                raise Exception(f'No table in database: {table}')
+            selection = self.select_all(table)
+            if not selection:
+                initiate_db(self.filepath, 'password', num_of_dummy_inserts)
+                # raise Exception(f'No table in database: {table}')
+            if num := (num_of_dummy_inserts - len(selection)) > 0:
+                initiate_db(self.filepath, 'password', num)
             if table_data['password'][table].keys() != self.tables[table].keys():
                 raise Exception(f'Something is wrong with columns in table: {table}')
             if not self.select_all(table):
