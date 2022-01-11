@@ -191,7 +191,8 @@ class DB_general():
                         conn.execute(command)
                     except sqlite3.OperationalError:
                         # table does not exist by check_name, but somehow we got an error
-                        print('problems with', DB_general.master_table_name)
+                        if table_name != DB_general.master_table_name:
+                            print('problems with', DB_general.master_table_name)
             conn.close()
             if success:
                 columns_and_data = DB_general.prepare_to_add_to_master_table(table_name, column_data)
