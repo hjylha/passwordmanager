@@ -85,13 +85,15 @@ class DB_auth(DB_general):
         super().__init__(filepath_of_db)
         self.table = 'auth'
         self.cols = ('hash', 'master_key', 'date_modified')
-        self.length = len(self.select_all(self.table))
-        # check that it contains the required stuff
-        # TODO: maybe improve these
+
+        # make sure db has table 'auth'
         selection = self.select_all(self.table)
         if not selection:
             initiate_db(self.filepath, 'auth', num_of_dummy_inserts)
-        if num := (num_of_dummy_inserts - len(selection)) > 0:
+            selection = self.select_all(self.table)
+        self.length = len(selection)
+        # check that it contains the required stuff
+        if num := (num_of_dummy_inserts - self.length) > 0:
             initiate_db(self.filepath, 'auth', num)
         if len(self.select_all(self.table)[0]) != 4:
             raise Exception(f'Something is wrong with columns in table: {self.table}')
@@ -168,6 +170,10 @@ class DB_keys(DB_general):
             selection = self.select_all(table)
             if not selection:
                 initiate_db(self.filepath, 'keys', num_of_dummy_inserts)
+                self.tables = self.get_table_data()
+                selection = self.select_all(table)
+                if table not in self.tables:
+                    raise Exception(f'Table not added to tables dict: {table}')
                 # raise Exception(f'No table in database: {table}')
             if num := (num_of_dummy_inserts - len(selection)) > 0:
                 initiate_db(self.filepath, 'keys', num)
@@ -256,6 +262,8 @@ class DB_password(DB_general):
             selection = self.select_all(table)
             if not selection:
                 initiate_db(self.filepath, 'password', num_of_dummy_inserts)
+                selection = self.select_all(table)
+                self.tables = self.get_table_data()
                 # raise Exception(f'No table in database: {table}')
             if num := (num_of_dummy_inserts - len(selection)) > 0:
                 initiate_db(self.filepath, 'password', num)
