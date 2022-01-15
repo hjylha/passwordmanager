@@ -136,7 +136,7 @@ def generate_pw(type_num: int) -> str:
             pw = getpass.getpass('Type the password you want: ')
             pw2 = getpass.getpass('Type the password again: ')
             if pw == pw2:
-                if pw != '':
+                if pw:
                     return pw
                 ans = yes_or_no_question('you did not type any password. Do you want to try again?')
                 if ans == 'n':
