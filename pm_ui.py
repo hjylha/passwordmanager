@@ -4,12 +4,9 @@ from typing import Optional
 
 import pyperclip
 
-# from dbs import initiate_db, DB_auth, DB_keys, DB_password
-from pm_class import PM, is_valid_email
+from pm_class import is_valid_email
 from pm_connect import connect_to_pm_dbs
 from crypto_stuff import generate_password
-# from file_handling import get_files
-# import file_locations
 
 
 # some helpful fcns
@@ -39,7 +36,7 @@ def get_master_password() -> str:
         print('Passwords you typed are not the same. Please try again.')
 
 # ask for username and password
-def ask_for_password() -> tuple[str, str]:
+def ask_for_password() -> str:
     # username = getpass.getpass('Enter your username: ')
     password = getpass.getpass('Enter the master password: ')
     return password
