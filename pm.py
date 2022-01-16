@@ -9,7 +9,7 @@ import getpass
 # from pm_data import default_db_filename, default_salt_filename
 # import pm_fcns as pm
 from pm_ui import PM_UI
-from pm_ui import clear_clipboard, clear_screen, yes_or_no_question, ask_for_password
+from pm_ui_fcns import clear_clipboard, clear_screen, yes_or_no_question, ask_for_password
 
 # ask to press enter, and clear clipboard
 def end_prompt():
