@@ -1,7 +1,6 @@
 from typing import Optional
 
-from dbs import DB_auth, DB_keys, DB_password
-from pm_class import PM
+from pm_class import DB_auth, DB_keys, DB_password, PM
 from file_handling import get_files
 import file_locations as fl
 
