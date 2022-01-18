@@ -1,19 +1,20 @@
 
-from email.policy import default
 from pathlib import Path
 import shutil
 
 # import unittest.mock as mock
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
 import fix_imports
-
+from dbs import DB_auth, DB_keys, DB_password
 import pm_ui
 from pm_ui import PM_UI
 from pm_class import PM
 from db_general import DB_general
-from file_handling import generate_salt
+from file_handling import generate_salt, get_salt
 import file_locations
+import crypto_stuff
 
 
 @pytest.fixture(scope='module')
@@ -157,7 +158,88 @@ class TestInit():
         assert pmui.pm.dbk.filepath.resolve() == normal_paths[2].resolve()
         assert pmui.pm.dbp.filepath.resolve() == normal_paths[3].resolve()
 
-    
+
+@pytest.fixture(scope='module')
+def master_password():
+    return '5up3r_g00d_p4s5w0r|)'
+
+@pytest.fixture(scope='class')
+def monkeyclass():
+    mp = MonkeyPatch()
+    yield mp
+    mp.undo()
+
+
+@pytest.fixture(scope='class')
+def pmui_empty(monkeyclass, paths, normal_paths, master_password):
+    # create 'empty' dbs
+    argmts = (get_salt(normal_paths[0]), DB_auth(normal_paths[1]), DB_keys(normal_paths[2]), DB_password(normal_paths[3]))
+    PM(*argmts)
+    # 
+    monkeyclass.setattr(file_locations, 'paths', paths)
+    pmui = PM_UI()
+    pmui.pm.add_master_password(master_password)
+    pmui.pm.set_name_lists()
+    return pmui
+
+class TestPMUIempty():
+
+    def test_get_unique_info_from_user(self, pmui_empty, monkeypatch):
+        info = ('username', 'email', 'app', 'url')
+        def get_info():
+            return info
+        monkeypatch.setattr(pm_ui, 'get_info_from_user', get_info)
+
+        # since pm dbs are 'empty', info is unique
+        assert pmui_empty.get_unique_info_from_user() == info
+
+
+    def test_find_app_and_username(self, pmui_empty, monkeypatch, capsys):
+        first_line = crypto_stuff.generate_password()
+        name_of_the_app = crypto_stuff.generate_password()
+        def app_name(*args):
+            return name_of_the_app
+        monkeypatch.setattr('builtins.input', app_name)
+
+        # there is nothing so this should find nothing
+        assert pmui_empty.find_app_and_username(first_line) is None
+        printed = capsys.readouterr()[0]
+        assert first_line in printed
+        assert f'No passwords related to {name_of_the_app} found' in printed
+
+    def test_find_password_for_app(self, pmui_empty, monkeypatch, capsys):
+        name_of_the_app = crypto_stuff.generate_password()
+        def app_name(*args):
+            return name_of_the_app
+        
+        def error_message(*args):
+            print('ERROR')
+
+        monkeypatch.setattr('builtins.input', app_name)
+        # if obtain_password is called, something has gone wrong
+        monkeypatch.setattr(pm_ui, 'obtain_password', error_message)
+        
+        assert pmui_empty.find_password_for_app() is None
+        printed = capsys.readouterr()[0]
+
+        assert 'Email' not in printed
+        assert 'Username' not in printed
+        assert 'ERROR' not in printed
+
+    def test_save_password_to_db_or_not(self, pmui_empty):
+        assert isinstance(pmui_empty.pm, PM)
+
+    def test_add_password(self, pmui_empty):
+        assert isinstance(pmui_empty.pm, PM)
+
+
+@pytest.fixture(scope='class')
+def pmui_w_stuff(pmui_empty):
+    # add some info
+    return pmui_empty
+
+
+
 class TestPMUI():
 
 
