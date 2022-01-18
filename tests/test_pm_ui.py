@@ -1,4 +1,5 @@
 
+from email.policy import default
 from pathlib import Path
 import shutil
 
@@ -120,7 +121,32 @@ class TestInit():
             assert pmui.pm.dba.filepath.resolve() == default_paths[1].resolve()
             assert pmui.pm.dbk.filepath.resolve() == default_paths[2].resolve()
             assert pmui.pm.dbp.filepath.resolve() == default_paths[3].resolve()
+        
     
+    def test_reconnect(self, monkeypatch, paths, default_paths):
+        monkeypatch.setattr(file_locations, 'paths', paths)
+
+        def say_no(q=None):
+            return 'n'
+        monkeypatch.setattr(pm_ui, 'yes_or_no_question', say_no)
+        # at first we do not connect with normal paths
+        pmui = PM_UI()
+
+        assert pmui.pm is None
+
+        # make normal files available
+        norm_paths = get_paths_from_str(paths, 1)
+        for path, def_path in zip(norm_paths, default_paths):
+            assert not path.exists()
+            assert def_path.exists()
+            shutil.copy(def_path.resolve(), path.resolve())
+        # reconnect with normal files
+        pmui.reconnect()
+        # now we are connected to normal files
+        assert isinstance(pmui.pm, PM)
+        assert pmui.pm.dba.filepath.resolve() == norm_paths[1].resolve()
+        
+
     def test_init_with_normal(self, monkeypatch, paths, normal_paths):
         monkeypatch.setattr(file_locations, 'paths', paths)
 
@@ -131,9 +157,7 @@ class TestInit():
         assert pmui.pm.dbk.filepath.resolve() == normal_paths[2].resolve()
         assert pmui.pm.dbp.filepath.resolve() == normal_paths[3].resolve()
 
-    def test_reconnect(self):
-        pass
-
+    
 class TestPMUI():
 
 
