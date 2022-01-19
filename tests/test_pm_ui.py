@@ -256,9 +256,32 @@ class TestPMUIempty():
 
 
     def test_add_password(self, pmui_empty, monkeypatch, capsys):
-        # info = (username, app, email, url)
+        # generate some random info = (username, app, email, url)
         info = tuple(crypto_stuff.generate_password() for _ in range(4))
         monkeypatch.setattr(pm_ui.PM_UI, 'get_unique_info_from_user', lambda *args: info)
+
+        # generate a password to go with the info
+        monkeypatch.setattr(pm_ui, 'how_to_generate_pw', lambda: 3)
+        pw = crypto_stuff.generate_password()
+        monkeypatch.setattr(pm_ui, 'generate_pw', lambda *args: pw)
+
+        monkeypatch.setattr(pm_ui, 'yes_or_no_question', lambda *args: 'y')
+
+        assert pmui_empty.add_password() is None
+
+        # text indicating success was printed on the screen
+        printed = capsys.readouterr()[0]
+        success_text = f'Password for user {info[0]} to app {info[2]} has been saved to the database.'
+
+        assert success_text in printed
+
+        # the password and related info was saved to db
+        pw_info = pmui_empty.pm.find_password(info[2])
+        # it is extremely unlikely that the previous app would show up here
+        assert len(pw_info) == 1
+        assert pw_info[0][1] == info[0]
+        assert pw_info[0][3] == pw
+        assert pw_info[0][4] == info[2]
 
 
 
