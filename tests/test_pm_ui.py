@@ -69,19 +69,15 @@ class TestInit():
         'answers', ['y', 'n']
     )
     def test_init_from_nothing(self, monkeypatch, paths, answers):
-        def answer(question=None):
-            return answers
         
-        monkeypatch.setattr(pm_ui, 'yes_or_no_question', answer)
+        monkeypatch.setattr(pm_ui, 'yes_or_no_question', lambda *args: answers)
         monkeypatch.setattr(file_locations, 'paths', paths)
 
         # pm = PM_UI()
         if answers == 'n':
             assert PM_UI().pm is None
         elif answers == 'y':
-            def pwd(prompt=None):
-                return 'password'
-            monkeypatch.setattr(pm_ui, 'get_master_password', pwd)
+            monkeypatch.setattr(pm_ui, 'get_master_password', lambda *args: 'password')
             assert isinstance(PM_UI().pm, PM)
 
     @pytest.mark.parametrize(
@@ -111,9 +107,7 @@ class TestInit():
         elif answers[1] == 'n':
             assert PM_UI().pm is None
         else:
-            def pwd(prompt=None):
-                return 'password'
-            monkeypatch.setattr(pm_ui, 'get_master_password', pwd)
+            monkeypatch.setattr(pm_ui, 'get_master_password', lambda *args: 'password')
             pmui = PM_UI()
 
             # now we should have a PM object
@@ -126,10 +120,8 @@ class TestInit():
     
     def test_reconnect(self, monkeypatch, paths, default_paths):
         monkeypatch.setattr(file_locations, 'paths', paths)
-
-        def say_no(q=None):
-            return 'n'
-        monkeypatch.setattr(pm_ui, 'yes_or_no_question', say_no)
+        # we do not use defaults nor initialize pm dbs
+        monkeypatch.setattr(pm_ui, 'yes_or_no_question', lambda *args: 'n')
         # at first we do not connect with normal paths
         pmui = PM_UI()
 
@@ -163,6 +155,7 @@ class TestInit():
 def master_password():
     return '5up3r_g00d_p4s5w0r|)'
 
+# need to use monkeypatch in a wider scope
 @pytest.fixture(scope='class')
 def monkeyclass():
     mp = MonkeyPatch()
@@ -175,7 +168,7 @@ def pmui_empty(monkeyclass, paths, normal_paths, master_password):
     # create 'empty' dbs
     argmts = (get_salt(normal_paths[0]), DB_auth(normal_paths[1]), DB_keys(normal_paths[2]), DB_password(normal_paths[3]))
     PM(*argmts)
-    # 
+    # change the filepaths for PM_UI
     monkeyclass.setattr(file_locations, 'paths', paths)
     pmui = PM_UI()
     pmui.pm.add_master_password(master_password)
@@ -186,20 +179,18 @@ class TestPMUIempty():
 
     def test_get_unique_info_from_user(self, pmui_empty, monkeypatch):
         info = ('username', 'email', 'app', 'url')
-        def get_info():
-            return info
-        monkeypatch.setattr(pm_ui, 'get_info_from_user', get_info)
+        monkeypatch.setattr(pm_ui, 'get_info_from_user', lambda: info)
 
         # since pm dbs are 'empty', info is unique
         assert pmui_empty.get_unique_info_from_user() == info
 
 
     def test_find_app_and_username(self, pmui_empty, monkeypatch, capsys):
+        # random header line
         first_line = crypto_stuff.generate_password()
+        # 'input' random app name
         name_of_the_app = crypto_stuff.generate_password()
-        def app_name(*args):
-            return name_of_the_app
-        monkeypatch.setattr('builtins.input', app_name)
+        monkeypatch.setattr('builtins.input', lambda *args: name_of_the_app)
 
         # there is nothing so this should find nothing
         assert pmui_empty.find_app_and_username(first_line) is None
@@ -208,15 +199,12 @@ class TestPMUIempty():
         assert f'No passwords related to {name_of_the_app} found' in printed
 
     def test_find_password_for_app(self, pmui_empty, monkeypatch, capsys):
+        # 'input' random app name
         name_of_the_app = crypto_stuff.generate_password()
-        def app_name(*args):
-            return name_of_the_app
-        
+        monkeypatch.setattr('builtins.input', lambda *args: name_of_the_app)
+        # if obtain_password is called, something has gone wrong
         def error_message(*args):
             print('ERROR')
-
-        monkeypatch.setattr('builtins.input', app_name)
-        # if obtain_password is called, something has gone wrong
         monkeypatch.setattr(pm_ui, 'obtain_password', error_message)
         
         assert pmui_empty.find_password_for_app() is None
@@ -226,11 +214,52 @@ class TestPMUIempty():
         assert 'Username' not in printed
         assert 'ERROR' not in printed
 
-    def test_save_password_to_db_or_not(self, pmui_empty):
-        assert isinstance(pmui_empty.pm, PM)
+    @pytest.mark.parametrize(
+        'ans, is_done, text', [
+            (('y', 'y', None), True, 'saved to the database'),
+            (('n', 'y', None), False, None),
+            (('n', 'n', None), True, 'Adding password canceled.'),
+            (('y', 'n', 'y'), False, None),
+            (('y', 'n', 'n'), True, 'Adding password canceled.')
+        ]
+    )
+    def test_save_password_to_db_or_not(self, pmui_empty, monkeypatch, capsys, ans, is_done, text):
+        info = tuple(crypto_stuff.generate_password() for _ in range(5))
+        count = [-1]
+        def answer(*args):
+            count[0] += 1
+            return ans[count[0]]
+        
+        monkeypatch.setattr(pm_ui, 'yes_or_no_question', answer)
 
-    def test_add_password(self, pmui_empty):
-        assert isinstance(pmui_empty.pm, PM)
+        assert pmui_empty.save_password_to_db_or_not(info) == is_done
+        
+        if text:
+            printed = capsys.readouterr()[0]
+            assert text in printed
+        
+        if ans[:2] == ('y', 'y'):
+            pw_info = pmui_empty.pm.find_password(info[3])
+            assert len(pw_info) == 1
+            # username, password and app name should be the same
+            assert pw_info[0][1] == info[0]
+            assert pw_info[0][3:5] == info[2:4]
+
+    # test add_password in the case where user provides no info
+    def test_add_password_no_info(self, pmui_empty, monkeypatch, capsys):
+        # make sure no info is returned
+        monkeypatch.setattr(pm_ui.PM_UI, 'get_unique_info_from_user', lambda *args: None)
+
+        assert pmui_empty.add_password() is None
+        printed = capsys.readouterr()[0]
+        assert 'Adding password canceled.' in printed
+
+
+    def test_add_password(self, pmui_empty, monkeypatch, capsys):
+        # info = (username, app, email, url)
+        info = tuple(crypto_stuff.generate_password() for _ in range(4))
+        monkeypatch.setattr(pm_ui.PM_UI, 'get_unique_info_from_user', lambda *args: info)
+
 
 
 @pytest.fixture(scope='class')

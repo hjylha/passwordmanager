@@ -171,7 +171,7 @@ class PM_UI():
             gen_type = how_to_generate_pw()
             pw = generate_pw(gen_type)
             # if no password, cancel the process
-            if pw == '':
+            if not pw:
                 print('Adding password canceled.')
                 return
             # user might want to check the generated password
