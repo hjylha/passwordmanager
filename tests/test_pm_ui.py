@@ -253,6 +253,21 @@ class TestPMUIempty():
         assert pmui_empty.add_password() is None
         printed = capsys.readouterr()[0]
         assert 'Adding password canceled.' in printed
+    
+    # the case where user canceled password generation
+    def test_add_password_no_password(self, pmui_empty, monkeypatch, capsys):
+        # generate some random info = (username, app, email, url)
+        info = tuple(crypto_stuff.generate_password() for _ in range(4))
+        monkeypatch.setattr(pm_ui.PM_UI, 'get_unique_info_from_user', lambda *args: info)
+
+        monkeypatch.setattr(pm_ui, 'how_to_generate_pw', lambda: 3)
+        monkeypatch.setattr(pm_ui, 'generate_pw', lambda *args: '')
+
+        pmui_empty.add_password()
+
+        printed = capsys.readouterr()[0]
+
+        assert 'Adding password canceled.' in printed
 
 
     def test_add_password(self, pmui_empty, monkeypatch, capsys):
@@ -267,7 +282,7 @@ class TestPMUIempty():
 
         monkeypatch.setattr(pm_ui, 'yes_or_no_question', lambda *args: 'y')
 
-        assert pmui_empty.add_password() is None
+        pmui_empty.add_password() is None
 
         # text indicating success was printed on the screen
         printed = capsys.readouterr()[0]
@@ -282,6 +297,45 @@ class TestPMUIempty():
         assert pw_info[0][1] == info[0]
         assert pw_info[0][3] == pw
         assert pw_info[0][4] == info[2]
+
+    # what happens if user tries many times to 'generate' password
+    @pytest.mark.parametrize(
+        'choice, num_of_tries', [
+            (1, 2),
+            (1, 4),
+            (2, 2),
+            (2, 5)
+        ]
+    )
+    def test_add_password_regenerate_password(self, pmui_empty, monkeypatch, capsys, choice, num_of_tries):
+        # generate some random info = (username, app, email, url)
+        info = tuple(crypto_stuff.generate_password() for _ in range(4))
+        monkeypatch.setattr(pm_ui.PM_UI, 'get_unique_info_from_user', lambda *args: info)
+
+        count = [0]
+
+        monkeypatch.setattr(pm_ui, 'how_to_generate_pw', lambda: choice)
+        # pw = crypto_stuff.generate_password()
+        monkeypatch.setattr(pm_ui, 'generate_pw', lambda *args: crypto_stuff.generate_password())
+
+        monkeypatch.setattr(pm_ui, 'reveal_password', lambda *args: print(f'Try {count[0]}'))
+
+        def time_to_stop(*args):
+            count[0] += 1
+            if count[0] >= num_of_tries:
+                return True
+            return False
+
+        monkeypatch.setattr(pm_ui.PM_UI, 'save_password_to_db_or_not', time_to_stop)
+
+        pmui_empty.add_password()
+
+        printed = capsys.readouterr()[0]
+
+        assert 'Password has been generated.' in printed
+
+        for i in range(num_of_tries):
+            assert f'Try {i}' in printed
 
 
 
