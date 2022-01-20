@@ -359,13 +359,13 @@ class TestPMUI():
 
     def test_get_unique_info_from_user_no_problem(self, pmui_w_stuff, monkeypatch):
         info = ('username', 'e@mail.com', 'app', 'url of app')
-        monkeypatch.setattr(pm_ui, 'get_info_from_user', lambda *args: info)
+        monkeypatch.setattr(pm_ui, 'get_info_from_user', lambda: info)
 
         assert pmui_w_stuff.get_unique_info_from_user() == info
     
     def test_get_unique_info_from_user_close(self, pmui_w_stuff, monkeypatch):
         info = ('user', 'e@mail.com', 'App9', 'url of app')
-        monkeypatch.setattr(pm_ui, 'get_info_from_user', lambda *args: info)
+        monkeypatch.setattr(pm_ui, 'get_info_from_user', lambda: info)
 
         assert pmui_w_stuff.get_unique_info_from_user() == info
 
@@ -402,10 +402,57 @@ class TestPMUI():
 
         assert pmui_w_stuff.get_unique_info_from_user() is None
 
+    def test_get_unique_info_from_user_capitalization(self, pmui_w_stuff, monkeypatch, capsys):
+        info = ('user3', 'some@other.email', 'app3', 'url_is_here')
+        monkeypatch.setattr(pm_ui, 'get_info_from_user', lambda: info)
+
+        monkeypatch.setattr(pm_ui, 'yes_or_no_question', lambda *args: 'n')
+
+        assert pmui_w_stuff.get_unique_info_from_user() is None
+
+        printed = capsys.readouterr()[0]
+        assert 'already in database' in printed
 
 
-    def test_find_app_and_username(self):
-        pass
+    def test_find_app_and_username_not_found(self, pmui_w_stuff, monkeypatch, capsys):
+        app = 'nonexisting app name'
+        monkeypatch.setattr('builtins.input', lambda *args: app)
+
+        assert pmui_w_stuff.find_app_and_username('some text here') is None
+
+        printed = capsys.readouterr()[0]
+        assert f'No passwords related to {app} found\n' in printed
+
+    @pytest.mark.parametrize(
+        'index', list(range(2, 12))
+    )
+    def test_find_app_and_username_not_found(self, pmui_w_stuff, monkeypatch, index, some_info):
+        app = f'App{index}'
+        monkeypatch.setattr('builtins.input', lambda *args: app)
+
+        result = pmui_w_stuff.find_app_and_username('some text here')
+
+        assert len(result) == 6
+
+        info = (*some_info[index][:2], f'password{index}', *some_info[index][2:])
+        assert result[1:] == info
+        assert isinstance(result[0], int)
+        assert result[0] > 0
+
+    def test_find_app_and_username_many_options(self, pmui_w_stuff, monkeypatch, capsys):
+        app = f'App1'
+        def give_input(*args):
+            if args:
+                return app
+            return '0'
+        monkeypatch.setattr('builtins.input', give_input)
+
+        assert pmui_w_stuff.find_app_and_username('some text here') == []
+
+        printed = capsys.readouterr()[0]
+
+        assert 'Search cancelled.' in printed
+
 
     def test_find_password_for_app(self):
         pass
