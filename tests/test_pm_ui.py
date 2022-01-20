@@ -339,9 +339,17 @@ class TestPMUIempty():
 
 
 
+@pytest.fixture(scope='module')
+def some_info():
+    return [(f'user{i}', f'email{i}@d.c', f'App{i}', f'www.app{i}.com') for i in range(13)]
+
+
 @pytest.fixture(scope='class')
-def pmui_w_stuff(pmui_empty):
+def pmui_w_stuff(pmui_empty, some_info):
     # add some info
+    infos = [(*info[:2], f'password{i}', *info[2:]) for i, info in enumerate(some_info)]
+    for info in infos:
+        pmui_empty.pm.force_add_password(*info)
     return pmui_empty
 
 
@@ -349,8 +357,52 @@ def pmui_w_stuff(pmui_empty):
 class TestPMUI():
 
 
-    def test_get_unique_info_from_user(self):
-        pass
+    def test_get_unique_info_from_user_no_problem(self, pmui_w_stuff, monkeypatch):
+        info = ('username', 'e@mail.com', 'app', 'url of app')
+        monkeypatch.setattr(pm_ui, 'get_info_from_user', lambda *args: info)
+
+        assert pmui_w_stuff.get_unique_info_from_user() == info
+    
+    def test_get_unique_info_from_user_close(self, pmui_w_stuff, monkeypatch):
+        info = ('user', 'e@mail.com', 'App9', 'url of app')
+        monkeypatch.setattr(pm_ui, 'get_info_from_user', lambda *args: info)
+
+        assert pmui_w_stuff.get_unique_info_from_user() == info
+
+    def test_get_unique_info_from_user_try_try_again(self, pmui_w_stuff, monkeypatch, some_info):
+        count = [-1]
+        info = ('username', 'e@mail.com', 'app', 'url of app')
+
+        def get_info(*args):
+            count[0] += 1
+            if count[0] < len(some_info):
+                return some_info[count[0]]
+            return info
+        monkeypatch.setattr(pm_ui, 'get_info_from_user', get_info)
+
+        monkeypatch.setattr(pm_ui, 'yes_or_no_question', lambda *args: 'y')
+
+        assert pmui_w_stuff.get_unique_info_from_user() == info
+
+    def test_get_unique_info_from_user_give_up(self, pmui_w_stuff, monkeypatch, some_info):
+        count = [-1]
+        def get_info(*args):
+            count[0] += 1
+            if count[0] < len(some_info):
+                return some_info[count[0]]
+        
+        monkeypatch.setattr(pm_ui, 'get_info_from_user', get_info)
+
+        def answer(*args):
+            if count[0] < 10:
+                return 'y'
+            return 'n'
+
+        monkeypatch.setattr(pm_ui, 'yes_or_no_question', answer)
+
+        assert pmui_w_stuff.get_unique_info_from_user() is None
+
+
 
     def test_find_app_and_username(self):
         pass
