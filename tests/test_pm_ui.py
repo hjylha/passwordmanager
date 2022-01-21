@@ -426,7 +426,7 @@ class TestPMUI():
     @pytest.mark.parametrize(
         'index', list(range(2, 12))
     )
-    def test_find_app_and_username_not_found(self, pmui_w_stuff, monkeypatch, index, some_info):
+    def test_find_app_and_username(self, pmui_w_stuff, monkeypatch, index, some_info):
         app = f'App{index}'
         monkeypatch.setattr('builtins.input', lambda *args: app)
 
@@ -453,9 +453,71 @@ class TestPMUI():
 
         assert 'Search cancelled.' in printed
 
+    @pytest.mark.parametrize(
+        'choice', list(range(1, 5))
+    )
+    def test_find_app_and_username_choose_option(self, pmui_w_stuff, monkeypatch, choice):
+        app = f'App1'
+        def give_input(*args):
+            if args:
+                return app
+            return str(choice)
+        monkeypatch.setattr('builtins.input', give_input)
 
-    def test_find_password_for_app(self):
-        pass
+        result = pmui_w_stuff.find_app_and_username('some text here')
+        assert result
+        assert app in result[4]
+
+    def test_find_app_and_username_not_valid(self, pmui_w_stuff, monkeypatch):
+        count = [0]
+        app = f'App1'
+        def give_input(*args):
+            if args:
+                return app
+            count[0] += 1
+            if count[0] < 3:
+                return crypto_stuff.generate_password()
+            if count[0] < 5:
+                return 1729
+            return '1'
+        monkeypatch.setattr('builtins.input', give_input)
+
+        result = pmui_w_stuff.find_app_and_username('some text here')
+        assert result
+        assert app in result[4]
+
+
+    def test_find_password_for_app_no_result(self, pmui_w_stuff, monkeypatch, capsys):
+        monkeypatch.setattr(pm_ui.PM_UI, 'find_app_and_username', lambda *args: None)
+
+        assert pmui_w_stuff.find_password_for_app() is None
+
+        # nothing gets printed since find_app_and_username
+        assert capsys.readouterr()[0] == ''
+
+    def test_find_password_for_app_no_result_proper(self, pmui_w_stuff, monkeypatch, capsys):
+        app = 'nonexisting app name'
+        monkeypatch.setattr('builtins.input', lambda *args: app)
+
+        assert pmui_w_stuff.find_password_for_app() is None
+
+        expected_text = f'Write the name of the app you want password for:\nNo passwords related to {app} found\n\n'
+        assert expected_text == capsys.readouterr()[0]
+
+    @pytest.mark.parametrize(
+        'index', list(range(2,10))
+    )
+    def test_find_password_for_app(self, pmui_w_stuff, monkeypatch, capsys, index):
+        app = f'App{index}'
+        monkeypatch.setattr('builtins.input', lambda *args: app)
+
+        success_text = f'testing was a big success{crypto_stuff.generate_password()}'
+        monkeypatch.setattr(pm_ui, 'obtain_password', lambda *args: print(success_text))
+
+        assert pmui_w_stuff.find_password_for_app() is None
+
+        assert success_text in capsys.readouterr()[0]
+
 
     def test_save_password_to_db_or_not(self):
         pass
