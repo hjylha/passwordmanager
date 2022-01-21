@@ -198,7 +198,8 @@ class PM_UI():
                 print('Password has been generated.')
                 reveal_password(pw)
             # try to update database
-            db_line_new = (db_line[0], db_line[1], db_line[2], pw, db_line[4], db_line[5])
+            # db_line_new = (db_line[0], db_line[1], db_line[2], pw, db_line[4], db_line[5])
+            db_line_new = (*db_line[:3], pw, *db_line[4:])
             if self.change_password_in_db_or_not(db_line_new):
                 # if update succesful or user cancels, return to main menu
                 return

@@ -10,6 +10,7 @@ import fix_imports
 from dbs import DB_auth, DB_keys, DB_password
 import pm_ui
 from pm_ui import PM_UI
+import pm_class
 from pm_class import PM
 from db_general import DB_general
 from file_handling import generate_salt, get_salt
@@ -520,22 +521,124 @@ class TestPMUI():
 
 
     def test_save_password_to_db_or_not(self):
+        # TODO
         pass
 
-    def test_change_password_in_db_or_not(self):
-        pass
+
+    @pytest.mark.parametrize(
+        'answers, result', [
+            (('y', 'y', None), True),
+            (('y', 'n', None), True),
+            (('n', None, 'y'), False),
+            (('n', None, 'n'), True)
+        ]
+    )
+    def test_change_password_in_db_or_not(self, pmui_w_stuff, monkeypatch, capsys, answers, result):
+        def answer(question=None):
+            if 'Do you want to save this password to the database?' == question:
+                return answers[0]
+            if 'Do you want to proceed?' == question:
+                return answers[1]
+            if 'Do you want to generate new password again?' == question:
+                return answers[2]
+        monkeypatch.setattr(pm_ui, 'yes_or_no_question', answer)
+
+        monkeypatch.setattr(pm_class.PM, 'change_password', lambda *args: print('db change happens here'))
+
+        assert pmui_w_stuff.change_password_in_db_or_not((0, '1', '2', '3', '4', '5')) == result
+
 
     def test_add_password(self):
+        # TODO
         pass
 
-    def test_change_password_in_db(self):
-        pass
 
-    def test_change_password(self):
-        pass
+    @pytest.mark.parametrize(
+            'type_choice', [1, 2, 3]
+        )
+    def test_change_password_in_db(self, pmui_w_stuff, monkeypatch, capsys, type_choice):
+        
+        monkeypatch.setattr(pm_ui, 'how_to_generate_pw', lambda *args: type_choice)
+        pw = crypto_stuff.generate_password()
+        monkeypatch.setattr(pm_ui, 'generate_pw', lambda *args: pw)
+
+        monkeypatch.setattr(pm_ui, 'reveal_password', lambda *args: print('revelation happening'))
+
+        # monkeypatch.setattr(pm_ui, 'yes_or_no_question', lambda *args: 'y')
+        monkeypatch.setattr(pm_ui.PM_UI, 'change_password_in_db_or_not', lambda *args: True)
+
+        assert pmui_w_stuff.change_password_in_db((0, '1', '2', '3', '4', '5')) is None
+
+        printed = capsys.readouterr()[0]
+
+        if type_choice in (1, 2):
+            assert 'revelation happening' in printed
+        else:
+            assert 'revelation happening' not in printed
+
+    def test_change_password_in_db_cancel(self, pmui_w_stuff, monkeypatch, capsys):
+        monkeypatch.setattr(pm_ui, 'how_to_generate_pw', lambda *args: 1)
+        monkeypatch.setattr(pm_ui, 'generate_pw', lambda *args: '')
+
+        assert pmui_w_stuff.change_password_in_db((0, '1', '2', '3', '4', '5')) is None
+
+        printed = capsys.readouterr()[0]
+
+        assert 'Changing password canceled.' in printed
+
+
+    @pytest.mark.parametrize(
+        'index', list(range(2, 10))
+    )
+    def test_change_password(self, pmui_w_stuff, monkeypatch, capsys, some_info, index):
+        info_line = some_info[index]
+        monkeypatch.setattr('builtins.input', lambda *args: info_line[2])
+
+        monkeypatch.setattr(pm_ui, 'how_to_generate_pw', lambda *args: 3)
+        pw = crypto_stuff.generate_password()
+        monkeypatch.setattr(pm_ui, 'generate_pw', lambda *args: pw)
+
+        monkeypatch.setattr(pm_ui, 'yes_or_no_question', lambda *args: 'y')
+
+        assert pmui_w_stuff.change_password() is None
+
+        db_search = pmui_w_stuff.pm.find_password(info_line[2])[0]
+
+        assert db_search[1:] == (*info_line[:2], pw, *info_line[2:]) 
+
+    def test_change_password_not_found(self, pmui_w_stuff, monkeypatch, capsys):
+        monkeypatch.setattr('builtins.input', lambda *args: 'not going to find this')
+
+        assert pmui_w_stuff.change_password() is None
+
+        printed = capsys.readouterr()[0]
+
+        assert 'Password found' not in printed
+
 
     def test_change_password_info(self):
+        # TODO
         pass
 
-    def test_delete_password(self):
-        pass
+
+    @pytest.mark.parametrize(
+        'ans, index', [
+            ('n', 4),
+            ('y', 6),
+            ('n', -15)
+            ]
+    )
+    def test_delete_password(self, pmui_w_stuff, monkeypatch, capsys, ans, index):
+        app = f'App{index}'
+        monkeypatch.setattr('builtins.input', lambda *args: app)
+        monkeypatch.setattr(pm_ui, 'yes_or_no_question', lambda *args: ans)
+
+        assert pmui_w_stuff.delete_password() is None
+
+        if ans == 'y':
+            assert not pmui_w_stuff.pm.find_password(app)
+        elif ans == 'n' and index > 1:
+            assert pmui_w_stuff.pm.find_password(app)
+        else:
+            not_printed = 'The following information will be deleted from the database:'
+            assert not_printed not in capsys.readouterr()[0]
