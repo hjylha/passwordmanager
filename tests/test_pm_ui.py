@@ -8,6 +8,7 @@ from _pytest.monkeypatch import MonkeyPatch
 
 import fix_imports
 from dbs import DB_auth, DB_keys, DB_password
+import pm_ui_fcns
 import pm_ui
 from pm_ui import PM_UI
 import pm_class
@@ -588,7 +589,7 @@ class TestPMUI():
 
 
     @pytest.mark.parametrize(
-        'index', list(range(2, 10))
+        'index', [0, 2, 6, 9]
     )
     def test_change_password(self, pmui_w_stuff, monkeypatch, capsys, some_info, index):
         info_line = some_info[index]
@@ -616,9 +617,68 @@ class TestPMUI():
         assert 'Password found' not in printed
 
 
-    def test_change_password_info(self):
-        # TODO
-        pass
+    @pytest.mark.parametrize(
+        'index, choices', [
+            (3, ('n', 'n', 'n', 'n', 'y', None)),
+            (5, ('y', 'n', 'y', 'n', 'n', 'n')),
+            (8, ('y', 'n', 'y', 'y', 'y', None)),
+            (12, ('n', 'y', 'n', 'y', 'y', None))
+        ]
+    )
+    def test_change_password_info(self, pmui_w_stuff, monkeypatch, some_info, index, choices):
+        info_line = some_info[index]
+        possible_new_info = (f'new_username{index}', f'new_email{index}@provider.com', f'New_App_name{index}', f'new_fancy_url{index}.com')
+        # app = info_line[2]
+        def give_input(prompt=None):
+            if prompt == '\t':
+                return info_line[2]
+            elif 'the new app name?' in prompt:
+                return possible_new_info[2]
+            elif ' the new username?' in prompt:
+                return possible_new_info[0]
+            elif ' the new email?' in prompt:
+                return possible_new_info[1]
+            elif 'the new url?' in prompt:
+                return possible_new_info[3]
+            # return input(prompt)
+            raise Exception()
+        monkeypatch.setattr('builtins.input', give_input)
+
+        def answer(question=None):
+            if 'to change the app name?' in question:
+                return choices[2]
+            elif 'ant to change the username?' in question:
+                return choices[0]
+            elif 'want to change the email?' in question:
+                return choices[1]
+            elif 't to change the url of the app?' in question:
+                return choices[3]
+            elif 'Do you want to proceed?' in question:
+                return choices[4]
+            elif 'Do you want to try again?' in question:
+                return choices[5]
+            # return None
+            raise Exception()
+
+        monkeypatch.setattr(pm_ui_fcns, 'yes_or_no_question', answer)
+        monkeypatch.setattr(pm_ui, 'yes_or_no_question', answer)
+
+        assert pmui_w_stuff.change_password_info() is None
+
+        new_info = []
+        for item, new_item, choice in zip(info_line, possible_new_info, choices[:4]):
+            if choice == 'y':
+                new_info.append(new_item)
+            elif choice == 'n':
+                new_info.append(item)
+            else:
+                raise Exception()
+        # if changing is canceled, nothing is changed
+        if choices[5] == 'n':
+            new_info = info_line
+
+        assert pmui_w_stuff.pm.find_password(new_info[2])[0][1:] == (*new_info[:2], f'password{index}', *new_info[2:])
+
 
 
     @pytest.mark.parametrize(
