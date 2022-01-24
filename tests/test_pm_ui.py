@@ -521,9 +521,9 @@ class TestPMUI():
         assert success_text in capsys.readouterr()[0]
 
 
-    def test_save_password_to_db_or_not(self):
-        # TODO
-        pass
+    # this is probably unnecessary?
+    # def test_save_password_to_db_or_not(self):
+    #     pass
 
 
     @pytest.mark.parametrize(
@@ -549,9 +549,47 @@ class TestPMUI():
         assert pmui_w_stuff.change_password_in_db_or_not((0, '1', '2', '3', '4', '5')) == result
 
 
-    def test_add_password(self):
-        # TODO
-        pass
+    def test_add_password(self, pmui_empty, monkeypatch, capsys):
+        # generate some random info = (username, app, email, url)
+        info = tuple(crypto_stuff.generate_password() for _ in range(4))
+        monkeypatch.setattr(pm_ui.PM_UI, 'get_unique_info_from_user', lambda *args: info)
+
+        # generate a password to go with the info
+        monkeypatch.setattr(pm_ui, 'how_to_generate_pw', lambda: 3)
+        pw = crypto_stuff.generate_password()
+        monkeypatch.setattr(pm_ui, 'generate_pw', lambda *args: pw)
+
+        monkeypatch.setattr(pm_ui, 'yes_or_no_question', lambda *args: 'y')
+
+        pmui_empty.add_password() is None
+
+        # text indicating success was printed on the screen
+        printed = capsys.readouterr()[0]
+        success_text = f'Password for user {info[0]} to app {info[2]} has been saved to the database.'
+
+        assert success_text in printed
+
+        # the password and related info was saved to db
+        pw_info = pmui_empty.pm.find_password(info[2])
+        # it is extremely unlikely that the previous app would show up here
+        assert len(pw_info) == 1
+        assert pw_info[0][1] == info[0]
+        assert pw_info[0][3] == pw
+        assert pw_info[0][4] == info[2]
+
+    @pytest.mark.parametrize(
+        'index', list(range(11))
+    )
+    def test_add_password_already_exists(self, pmui_w_stuff, monkeypatch, capsys, some_info, index):
+        info = some_info[index]
+        monkeypatch.setattr(pm_ui, 'get_info_from_user', lambda *args: info)
+
+        monkeypatch.setattr(pm_ui, 'yes_or_no_question', lambda *args: 'n')
+
+        pmui_w_stuff.add_password()
+        
+        assert 'Adding password canceled.' in capsys.readouterr()[0]
+
 
 
     @pytest.mark.parametrize(
