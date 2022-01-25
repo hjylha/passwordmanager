@@ -13,10 +13,10 @@ from pm_ui_fcns import clear_clipboard, clear_screen, yes_or_no_question, ask_fo
 
 # ask to press enter, and clear clipboard
 def end_prompt():
-    print('\n')
+    print('')
     getpass.getpass('Press ENTER to return back to menu. (This also clears clipboard)')
     clear_clipboard()
-    print('\n')
+    print('')
 
 
 def password_manager():
@@ -25,7 +25,7 @@ def password_manager():
     pm_ui = PM_UI()
 
     if pm_ui.pm is None:
-        exit()
+        return
     
     # un = 'placeholder username'
     if pm_ui.pm.master_key is None:
@@ -35,7 +35,7 @@ def password_manager():
             pm_ui.pm.set_name_lists()
         else:
             print('Incorrect username and password')
-            exit()
+            return
 
     # no need for master pw anymore
     master_pw = None
@@ -58,7 +58,7 @@ def password_manager():
             ans = yes_or_no_question('Are you sure you want to exit Password Manager?')
             if ans.lower() == 'y':
                 clear_screen()
-                exit()
+                return
         elif action == '1':
             pm_ui.add_password()
             end_prompt()
