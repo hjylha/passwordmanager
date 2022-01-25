@@ -282,8 +282,11 @@ class TestDBauth():
 
         # add this password twice to get error
         password = 'g00d p4ssw0rd'
-        dba.add_password(password, salt)
-        dba.add_password(password, salt)
+        # make sure they are not added to the same row
+        row1 = dbs.cs.secrets.randbelow(dba.length) + 1
+        row2 = dbs.cs.secrets.choice([i + 1 for i in range(dba.length) if i+1 != row1])
+        dba.add_password(password, salt, rowid=row1)
+        dba.add_password(password, salt, rowid=row2)
         with pytest.raises(Exception):
             dba.check_password(password)
 
