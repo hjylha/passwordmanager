@@ -6,6 +6,8 @@ import pyperclip
 import fix_imports
 
 import file_locations
+from file_handling import generate_salt, get_salt
+from pm_class import PM, DB_auth, DB_keys, DB_password
 import pm
 import crypto_stuff
 
@@ -30,24 +32,46 @@ def get_paths_from_str(paths_as_str, index):
 @pytest.fixture(scope='module')
 def default_paths(paths):
     def_paths = get_paths_from_str(paths, 0)
-    # # make sure the files exist
-    # if not def_paths[0].exists():
-    #     generate_salt(def_paths[0])
-    # for path in def_paths[1:]:
-    #     if not path.exists():
-    #         DB_general(path)
     yield def_paths
     # remove files after some time
     for path in def_paths:
         if path.exists():
             path.unlink()
 
+@pytest.fixture(scope='module')
+def normal_paths(paths):
+    norm_paths = get_paths_from_str(paths, 1)
+    yield norm_paths
+    # remove files after some time
+    for path in norm_paths:
+        if path.exists():
+            path.unlink()
+
 
 @pytest.fixture(scope='module')
-def pm_empty(paths):
-    pass
+def pm_empty(normal_paths):
+    if not normal_paths[0].exists():
+        generate_salt(normal_paths[0])
+    argmts = (get_salt(normal_paths[0]), DB_auth(normal_paths[1]), DB_keys(normal_paths[2]), DB_password(normal_paths[3]))
+    return PM(*argmts)
 
 
+@pytest.fixture(scope='module')
+def some_info():
+    return [(f'user{i}', f'email{i}@d.c', f'App{i}', f'www.app{i}.com') for i in range(13)]
+
+
+@pytest.fixture(scope='module')
+def pm_w_stuff(pm_empty, some_info):
+    # add some info
+    infos = [(*info[:2], f'password{i}', *info[2:]) for i, info in enumerate(some_info)]
+    for info in infos:
+        pm_empty.force_add_password(*info)
+    return pm_empty
+
+
+# onto testing
+# i don't think there is much testing with end_prompt
 def test_end_prompt(monkeypatch, capsys):
     pyperclip.copy('important text in clipboard')
     monkeypatch.setattr(pm.getpass, 'getpass', lambda *args: None)
@@ -60,40 +84,24 @@ def test_end_prompt(monkeypatch, capsys):
     assert pyperclip.paste() == 'nothing here'
 
 
-# @pytest.mark.parametrize(
-#     'inputs', [
-#         'y',
-#         password,
-#         password,
-#         '1',
-#         'Very Distinctive App',
-#         'url.of.app',
-#         'username',
-#         'e@mail.com',
-#         '2',
-#         '0',
-#         'y',
-#         'y',
-#         None,
-#         '5',
-#         None,
-#         '0',
-#         'y'
-#     ]
-# )
-def test_password_manager_clean_start(monkeypatch, capsys, paths, password, default_paths):
+@pytest.mark.parametrize(
+    'inputs', [
+        ['y', '1', 'url.of.app', 'username', 'e@mail.com', '2', '0', 'y', 'y', None, '5', None, '0', 'y']
+    ]
+)
+def test_password_manager_clean_start(monkeypatch, capsys, paths, password, default_paths, inputs):
+    inputs.insert(1, password)
+    inputs.insert(1, password)
+    # random app_name should be noticeable
     app_name = crypto_stuff.generate_password(10, True)
-    pw = '1234'
-    inputs = ['y', password, password, '1', app_name, 'url.of.app', 'username', 'e@mail.com', '2', '0', 'y', 'y', None, '5', None, '0', 'y']
+    inputs.insert(4, app_name)
+
     monkeypatch.setattr(file_locations, 'paths', paths)
+
     count = [-1]
 
     def give_input(prompt=None):
         count[0] += 1
-        print(f' input prompt: {prompt} ')
-        print(f' input number: {count[0]} ')
-        print(f' inputted value: {inputs[count[0]]} ')
-
         return inputs[count[0]]
 
     monkeypatch.setattr('builtins.input', give_input)
