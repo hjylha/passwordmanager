@@ -1,6 +1,6 @@
 from pathlib import Path
 import os
-import select
+import getpass
 if os.name == 'nt':
     import msvcrt
 else:
@@ -105,7 +105,7 @@ def test_password_manager_clean_start(monkeypatch, capsys, paths, password, defa
         return inputs[count[0]]
 
     monkeypatch.setattr('builtins.input', give_input)
-    monkeypatch.setattr(pm.getpass, 'getpass', give_input)
+    monkeypatch.setattr(getpass, 'getpass', give_input)
 
     pm.password_manager()
 

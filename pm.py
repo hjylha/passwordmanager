@@ -1,21 +1,16 @@
 
-# import os
-import getpass
-# import pyperclip
-# from crypto_stuff import do_crypto_stuff, create_hash_storage
-# from db import check_db, get_master_table
-# import crypto_db
-# from pm_setup import load_salt, initiate_db
-# from pm_data import default_db_filename, default_salt_filename
-# import pm_fcns as pm
+import sys
 from pm_ui import PM_UI
 from pm_ui_fcns import clear_screen, end_prompt, yes_or_no_question, ask_for_password
 
-
-def password_manager():
+# mode: 0=normal, 1=add, 2=get, 3=list all apps
+def password_manager(mode: int =0):
     # starting text
     # print('Welcome to my Password Manager\n')
-    pm_ui = PM_UI()
+    existing_and_not_default = True if mode else False
+    # if mode:
+    #     existing_and_not_default = True 
+    pm_ui = PM_UI(existing_and_not_default)
 
     if pm_ui.pm is None:
         return
@@ -34,7 +29,16 @@ def password_manager():
     master_pw = None
     clear_screen()
     # print(f'Password Manager for user {un}\n')
-
+    if mode == 1:
+        pm_ui.add_password()
+        return
+    if mode == 2:
+        pm_ui.find_password_for_app()
+        return
+    if mode == 3:
+        pm_ui.list_apps()
+        return
+    
     # the program loop
     while True:
         print('What do you want to do?')
@@ -65,11 +69,7 @@ def password_manager():
             pm_ui.change_password_info()
             end_prompt()
         elif action == '5':
-            print('These are the apps you have saved passwords for:')
-            app_list = [app for _, app in pm_ui.pm.app_list]
-            for app in app_list:
-                print('\t', app)
-            print('\n')
+            pm_ui.list_apps()
             end_prompt()
         elif action == '7':
             pm_ui.delete_password()
@@ -80,4 +80,15 @@ def password_manager():
             print('Invalid input. Please choose one of the options.\n')
 
 if __name__ == '__main__':
-    password_manager()
+    if len(sys.argv) > 1:
+        if 'add' in sys.argv[1]:
+            password_manager(1)
+        elif 'get' in sys.argv[1]:
+            password_manager(2)
+        elif 'list' in sys.argv[1] or 'app' in sys.argv[1]:
+            password_manager(3)
+        else:
+            print(f'Not a valid parameter: {sys.argv[1]}')
+    else:
+        password_manager()
+
