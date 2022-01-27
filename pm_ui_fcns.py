@@ -1,6 +1,8 @@
 import os
+import sys
 import time
 import msvcrt
+import select
 import getpass
 
 import pyperclip
@@ -34,8 +36,16 @@ def end_prompt(timeout: int = 20):
             if msvcrt.kbhit():
                 if ord(msvcrt.getch()) == 13:
                     break
+            time.sleep(0.1)
     else:
-        getpass.getpass()
+        # getpass.getpass()
+        while time.time() - start_time < timeout:
+            time_left = timeout - time.time() - start_time
+            print(f'\rThis is done automatically in {int(time_left)} seconds ', end='', flush=True)
+            ready, _, _ = select.select([sys.stdin], [], [], time_left)
+            if ready:
+                break
+            time.sleep(0.1)
     clear_clipboard()
     print('')
 
