@@ -35,7 +35,7 @@ def test_salt():
 # I only have the C drive
 def test_get_drives():
     if os.name == 'nt':
-        assert 'C:' in fh.get_drives()
+        assert 'C:/' in fh.get_drives()
     else:
         assert '/' in fh.get_drives()
 
@@ -50,11 +50,31 @@ def test_get_possible_starting_folders():
     # passwordmanager folder should always be here
     assert Path(__file__).parent.parent in folders
 
-def test_find_path():
-    filepath = 'tests/test_file_handling.py'
-    assert fh.find_path(filepath) == Path(__file__).resolve()
-    filepath = 'tests/not existing file.ext'
-    assert fh.find_path(filepath) is None
+@pytest.mark.parametrize(
+    'filepath, result', [
+        ('tests/test_file_handling.py', Path(__file__).resolve()),
+        ('tests/not existing file.ext', None)
+    ]
+)
+def test_find_path(filepath, result):
+    assert fh.find_path(filepath) == result
+    # filepath = 'tests/not existing file.ext'
+    # assert fh.find_path(filepath) is None
+
+@pytest.mark.parametrize(
+    'filepath, name', [
+        ('windows', 'nt'),
+        ('C:/users', 'nt'),
+        ('home', None),
+        ('/dev', None)
+    ]
+)
+def test_find_path_sys(filepath, name):
+    os_name = 'nt' if os.name == 'nt' else None
+    if os_name == name:
+        assert fh.find_path(filepath)
+
+
 
 def test_find_path_from_list():
     path_list = ('tests/not existing file.ext', 'tests/test_file_handling.py')

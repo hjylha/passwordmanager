@@ -23,7 +23,7 @@ def get_salt(salt_path) -> bytes:
 def get_drives() -> list[str]:
     if os.name == 'nt':
         letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        return [f"{c}:" for c in letters if Path(f"{c}:").exists()]
+        return [f"{c}:/" for c in letters if Path(f"{c}:").exists()]
     else:
         return ['/']
 
@@ -48,6 +48,9 @@ def get_possible_starting_folders() -> tuple:
 
 # find an existing path from above folders
 def find_path(path: str):
+    # absolute path works
+    if Path(path).exists():
+        return Path(path).resolve()
     possible_folders = get_possible_starting_folders()
     for folder in possible_folders:
         if Path(folder / path).exists():
