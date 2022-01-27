@@ -58,7 +58,7 @@ class TestInput():
             monkeypatch.setattr(pm_ui_fcns.msvcrt, 'getch', lambda *args: b'\r')
         else:
             # very stupid use of monkeypatch here
-            monkeypatch.setattr(pm_ui_fcns.select, 'select', lambda *args: None)
+            monkeypatch.setattr(pm_ui_fcns.select, 'select', lambda *args: (False, None, None))
 
         pm_ui_fcns.end_prompt(timeout)
         expected_text = f'\nPress ENTER to return back to menu. (This also clears clipboard)\n\rThis is done automatically in {timeout} seconds \n'

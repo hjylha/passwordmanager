@@ -1,4 +1,10 @@
 from pathlib import Path
+import os
+import select
+if os.name == 'nt':
+    import msvcrt
+else:
+    import select
 
 import pytest
 import pyperclip
@@ -73,7 +79,7 @@ def pm_w_stuff(pm_empty, some_info):
 # onto testing
 @pytest.mark.parametrize(
     'inputs', [
-        ['y', '1', 'url.of.app', 'username', 'e@mail.com', '2', '0', 'y', 'y', None, '5', None, '0', 'y']
+        ['y', '1', 'url.of.app', 'username', 'e@mail.com', '2', '0', 'y', 'y', '5', '0', 'y']
     ]
 )
 def test_password_manager_clean_start(monkeypatch, capsys, paths, password, default_paths, inputs):
@@ -84,6 +90,13 @@ def test_password_manager_clean_start(monkeypatch, capsys, paths, password, defa
     inputs.insert(4, app_name)
 
     monkeypatch.setattr(file_locations, 'paths', paths)
+    # clearing screen might be bad for debugging
+    monkeypatch.setattr(pm, 'clear_screen', lambda: None)
+    if os.name == 'nt':
+        monkeypatch.setattr(msvcrt, 'kbhit', lambda *args: True)
+        monkeypatch.setattr(msvcrt, 'getch', lambda *args: b'\r')
+    else:
+        monkeypatch.setattr(select, 'select', lambda *args: (False, None, None))
 
     count = [-1]
 

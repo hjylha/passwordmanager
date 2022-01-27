@@ -41,8 +41,10 @@ def end_prompt(timeout: int = 20):
             time.sleep(0.1)
     else:
         # getpass.getpass()
-        print(f'\rThis is done automatically in {timeout- int(time.time() - start_time)} seconds ', end=' ', flush=True)
-        select.select([sys.stdin], [], [], timeout)
+        print(f'\rThis is done automatically in {timeout- int(time.time() - start_time)} seconds ', end='', flush=True)
+        ready, _, _ = select.select([sys.stdin], [], [], timeout)
+        if ready:
+            sys.stdin.readline().strip()
         # while time.time() - start_time < timeout:
         #     time_left = timeout - time.time() + start_time
         #     print(f'\rThis is done automatically in {int(time_left)} seconds ', end='', flush=True)
@@ -51,7 +53,7 @@ def end_prompt(timeout: int = 20):
         #         break
         #     time.sleep(0.1)
     clear_clipboard()
-    print('')
+    print('\n')
 
 
 # ask user to set master password
