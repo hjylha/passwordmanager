@@ -25,7 +25,7 @@ class TestOutput():
 
     def test_clear_clipboard(self):
         pm_ui_fcns.clear_clipboard()
-        assert pm_ui_fcns.pyperclip.paste() == 'nothing here'
+        assert not pm_ui_fcns.pyperclip.paste()
 
 
     @pytest.mark.parametrize(
@@ -45,6 +45,21 @@ class TestOutput():
 
 
 class TestInput():
+
+    @pytest.mark.parametrize(
+        'timeout', [3, 5, 8, 10, 15]
+    )
+    def test_end_prompt(self, monkeypatch, capsys, timeout):
+        pm_ui_fcns.pyperclip.copy('important text in clipboard')
+        monkeypatch.setattr(pm_ui_fcns.msvcrt, 'kbhit', lambda *args: True)
+        monkeypatch.setattr(pm_ui_fcns.msvcrt, 'getch', lambda *args: b'\r')
+
+        pm_ui_fcns.end_prompt(timeout)
+        expected_text = f'\nPress ENTER to return back to menu. (This also clears clipboard)\n\rThis is done automatically in {timeout} seconds \n'
+
+        assert capsys.readouterr()[0] == expected_text
+
+        assert not pm_ui_fcns.pyperclip.paste()
 
     @pytest.mark.parametrize(
         'pw11, pw12, result', [

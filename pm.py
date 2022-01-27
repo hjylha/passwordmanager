@@ -9,14 +9,7 @@ import getpass
 # from pm_data import default_db_filename, default_salt_filename
 # import pm_fcns as pm
 from pm_ui import PM_UI
-from pm_ui_fcns import clear_clipboard, clear_screen, yes_or_no_question, ask_for_password
-
-# ask to press enter, and clear clipboard
-def end_prompt():
-    print('')
-    getpass.getpass('Press ENTER to return back to menu. (This also clears clipboard)')
-    clear_clipboard()
-    print('')
+from pm_ui_fcns import clear_screen, end_prompt, yes_or_no_question, ask_for_password
 
 
 def password_manager():

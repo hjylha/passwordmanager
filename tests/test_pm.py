@@ -71,19 +71,6 @@ def pm_w_stuff(pm_empty, some_info):
 
 
 # onto testing
-# i don't think there is much testing with end_prompt
-def test_end_prompt(monkeypatch, capsys):
-    pyperclip.copy('important text in clipboard')
-    monkeypatch.setattr(pm.getpass, 'getpass', lambda *args: None)
-
-    pm.end_prompt()
-    expected_text = '\n\n'
-
-    assert capsys.readouterr()[0] == expected_text
-
-    assert pyperclip.paste() == 'nothing here'
-
-
 @pytest.mark.parametrize(
     'inputs', [
         ['y', '1', 'url.of.app', 'username', 'e@mail.com', '2', '0', 'y', 'y', None, '5', None, '0', 'y']
