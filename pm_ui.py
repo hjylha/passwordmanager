@@ -13,25 +13,27 @@ from pm_ui_fcns import how_to_generate_pw, generate_pw, reveal_password, obtain_
 # functions dealing with dbs are contained in a class
 class PM_UI():
 
-    def __init__(self) -> None:
+    def __init__(self, existing_and_not_default: bool =False, waiting_time: int =20) -> None:
+        self.timeout = waiting_time
         self.pm = connect_to_pm_dbs(False, False)
         
         if not self.pm:
             print('Normal files not found.')
-            self.pm = connect_to_pm_dbs(True, False)
-            if self.pm:
-                a = yes_or_no_question('Do you want to use default files?')
-                if a.lower() == 'n':
-                    self.pm = None
-            if not self.pm:
-                ans = yes_or_no_question('Do you want to initialize the Password Manager?')
-                if ans.lower() == 'y':
-                        print('Initializing Password Manager databases...')
-                        self.pm = connect_to_pm_dbs(True, True)
-                        print('Password database initialized.')
-                        master_password = get_master_password()
-                        self.pm.add_master_password(master_password)
-                        self.pm.set_name_lists()
+            if not existing_and_not_default:
+                self.pm = connect_to_pm_dbs(True, False)
+                if self.pm:
+                    a = yes_or_no_question('Do you want to use default files?')
+                    if a.lower() == 'n':
+                        self.pm = None
+                if not self.pm:
+                    ans = yes_or_no_question('Do you want to initialize the Password Manager?')
+                    if ans.lower() == 'y':
+                            print('Initializing Password Manager databases...')
+                            self.pm = connect_to_pm_dbs(True, True)
+                            print('Password database initialized.')
+                            master_password = get_master_password()
+                            self.pm.add_master_password(master_password)
+                            self.pm.set_name_lists()
     
     # re-init PM, only use this if it works
     def reconnect(self) -> None:
@@ -55,6 +57,14 @@ class PM_UI():
     #     self.pm.set_name_lists()
     
     
+    def list_apps(self) -> None:
+        print('These are the apps you have saved passwords for:')
+        app_list = tuple(app for _, app in self.pm.app_list)
+        for app in app_list:
+            print('\t', app)
+        print('')
+
+
     # back to established PM stuff
     # get the info and check that app and username are not already in database
     def get_unique_info_from_user(self) -> Optional[tuple[str, str, str, str]]:

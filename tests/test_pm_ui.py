@@ -358,6 +358,16 @@ def pmui_w_stuff(pmui_empty, some_info):
 
 class TestPMUI():
 
+    def test_list_apps(self, pmui_w_stuff, capsys, some_info):
+        apps = set(item[2] for item in some_info)
+
+        pmui_w_stuff.list_apps()
+
+        printed = capsys.readouterr()[0]
+        printed_apps = set(line.strip() for line in printed.split('\n') if '\t' in line)
+
+        assert 'These are the apps you have saved passwords for:\n' in printed
+        assert printed_apps == apps
 
     def test_get_unique_info_from_user_no_problem(self, pmui_w_stuff, monkeypatch):
         info = ('username', 'e@mail.com', 'app', 'url of app')
