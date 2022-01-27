@@ -61,7 +61,7 @@ class TestInput():
             monkeypatch.setattr(pm_ui_fcns.select, 'select', lambda *args: (False, None, None))
 
         pm_ui_fcns.end_prompt(timeout)
-        expected_text = f'\nPress ENTER to return back to menu. (This also clears clipboard)\n\rThis is done automatically in {timeout} seconds \n'
+        expected_text = f'\nPress ENTER to return back to menu. (This also clears clipboard)\n\rThis is done automatically in {timeout} seconds \n\n'
 
         assert capsys.readouterr()[0] == expected_text
 
