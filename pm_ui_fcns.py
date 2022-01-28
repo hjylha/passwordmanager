@@ -28,10 +28,13 @@ def clear_clipboard():
     pyperclip.copy('')
 
 # ask to press enter to clear clipboard, this will be done automatically in timeout seconds
-def end_prompt(timeout: int = 20):
+def end_prompt(timeout: int =20, back_to_menu: bool =True):
     start_time = time.time()
     print('')
-    print('Press ENTER to return back to menu. (This also clears clipboard)')
+    if back_to_menu:
+        print('Press ENTER to return back to menu. (This also clears clipboard)')
+    else:
+        print('Press ENTER to clear clipboard.')
     if os.name == 'nt':
         while time.time() - start_time < timeout:
             print(f'\rThis is done automatically in {timeout- int(time.time() - start_time)} seconds ', end='', flush=True)

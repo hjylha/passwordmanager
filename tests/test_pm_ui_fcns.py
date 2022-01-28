@@ -49,9 +49,14 @@ class TestOutput():
 class TestInput():
 
     @pytest.mark.parametrize(
-        'timeout', [3, 5, 8, 10, 15]
+        'timeout, to_menu', [
+            (3, True), 
+            (5, False), 
+            (8, True), 
+            (10, False), 
+            (15, True)]
     )
-    def test_end_prompt(self, monkeypatch, capsys, timeout):
+    def test_end_prompt(self, monkeypatch, capsys, timeout, to_menu):
         pm_ui_fcns.pyperclip.copy('important text in clipboard')
         if os.name == 'nt':
             monkeypatch.setattr(pm_ui_fcns.msvcrt, 'kbhit', lambda *args: True)
@@ -60,8 +65,11 @@ class TestInput():
             # very stupid use of monkeypatch here
             monkeypatch.setattr(pm_ui_fcns.select, 'select', lambda *args: (False, None, None))
 
-        pm_ui_fcns.end_prompt(timeout)
-        expected_text = f'\nPress ENTER to return back to menu. (This also clears clipboard)\n\rThis is done automatically in {timeout} seconds \n\n'
+        pm_ui_fcns.end_prompt(timeout, to_menu)
+        if to_menu:
+            expected_text = f'\nPress ENTER to return back to menu. (This also clears clipboard)\n\rThis is done automatically in {timeout} seconds \n\n'
+        else:
+            expected_text = f'\nPress ENTER to clear clipboard.\n\rThis is done automatically in {timeout} seconds \n\n'
 
         assert capsys.readouterr()[0] == expected_text
 
