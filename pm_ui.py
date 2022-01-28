@@ -41,21 +41,6 @@ class PM_UI():
         # files, _ = get_files(file_locations.paths)
         # self.pm = PM(files[0], DB_auth(files[1]), DB_keys(files[2]), DB_password(files[3]))
     
-    # initializing password manager
-    # def initiate_pm(self) -> None:
-    #     # setup the databases
-    #     files = get_files(file_locations.paths)[0]
-    #     print('Initializing Password Manager databases...')
-    #     initiate_db(files[1], 'auth')
-    #     initiate_db(files[2], 'keys')
-    #     initiate_db(files[3], 'password')
-    #     self.pm = PM(files[0], DB_auth(files[1]), DB_keys(files[2]), DB_password(files[3]))
-    #     print('Password database initialized.')
-    #     # get master password from user
-    #     master_password = get_master_password()
-    #     self.pm.add_master_password(master_password)
-    #     self.pm.set_name_lists()
-    
     
     def list_apps(self) -> None:
         print('These are the apps you have saved passwords for:')
@@ -173,7 +158,7 @@ class PM_UI():
         info = self.get_unique_info_from_user()
         # if user does not want to give info, back to the main menu
         if not info:
-            print('Adding password canceled.')
+            print('Adding password canceled.\n')
             return
         # while loop, since user might want to generate password again
         while True:
@@ -182,7 +167,7 @@ class PM_UI():
             pw = generate_pw(gen_type)
             # if no password, cancel the process
             if not pw:
-                print('Adding password canceled.')
+                print('Adding password canceled.\n')
                 return
             # user might want to check the generated password
             if gen_type in (1, 2):
@@ -247,7 +232,7 @@ class PM_UI():
             else:
                 ans2 = yes_or_no_question('Do you want to try again?')
                 if ans2 == 'n':
-                    print('Updating cancelled.')
+                    print('Updating cancelled.\n')
                     return
     
     def delete_password(self) -> None:
@@ -260,4 +245,4 @@ class PM_UI():
             self.pm.delete_password(result[0])
             print('Password has been deleted from the database.')
         if ans == 'n':
-            print('Delete process cancelled.')
+            print('Delete process cancelled.\n')
