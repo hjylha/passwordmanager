@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys
 import os
 import getpass
 if os.name == 'nt':
@@ -77,6 +78,47 @@ def pm_w_stuff(pm_empty, some_info):
 
 
 # onto testing
+@pytest.mark.parametrize(
+    'arguments', [
+        ('placeholder', 'add', '-timeout=15'),
+        ('placeholder', '-timeout=15', 'get'),
+        ('placeholder', '-mode=1', 'list', '-timeout=15')
+    ]
+)
+def test_get_command_line_arguments(monkeypatch, arguments):
+
+    monkeypatch.setattr(sys, 'argv', arguments)
+
+    comm, params = pm.get_command_line_arguments()
+
+    assert comm in ('add', 'get', 'list')
+    assert params['timeout'] == 15
+    if 'mode' in params.keys():
+        assert params['mode'] == 1
+
+@pytest.mark.parametrize(
+    'arguments', [
+        ('placeholder', 'add', '-timeout=i5'),
+        ('placeholder', '-timeout=d4', 'get'),
+        ('placeholder', '-mode=1', 'list', '-timeout=1s')
+    ]
+)
+def test_get_command_line_arguments_error(monkeypatch, arguments):
+    monkeypatch.setattr(sys, 'argv', arguments)
+    with pytest.raises(ValueError):
+        pm.get_command_line_arguments()
+
+
+def test_get_command_line_arguments_none(monkeypatch):
+    arguments = ['placeholder']
+    monkeypatch.setattr(sys, 'argv', arguments)
+
+    comm, params = pm.get_command_line_arguments()
+
+    assert comm is None
+    assert params == dict()
+
+
 @pytest.mark.parametrize(
     'inputs', [
         ['y', '1', 'url.of.app', 'username', 'e@mail.com', '2', '0', 'y', 'y', '5', '0', 'y']
