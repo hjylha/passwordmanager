@@ -51,6 +51,8 @@ def password_manager(mode: int =0, timeout: int =20):
         return
     
     clear_screen()
+
+    pm_ui.show_file_locations()
     # the program loop
     while True:
         print('What do you want to do?')

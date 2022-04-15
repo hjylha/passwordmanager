@@ -49,6 +49,13 @@ class PM_UI():
             print('\t', app)
         print('')
 
+    def show_file_locations(self) -> None:
+        print('Accessed databases:')
+        print(f'Auth: {self.pm.dba.filepath}')
+        print(f'Keys: {self.pm.dbk.filepath}')
+        print(f'Data: {self.pm.dbp.filepath}')
+        print('')
+
 
     # back to established PM stuff
     # get the info and check that app and username are not already in database

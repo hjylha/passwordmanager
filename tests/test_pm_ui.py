@@ -179,6 +179,13 @@ def pmui_empty(monkeyclass, paths, normal_paths, master_password):
 
 class TestPMUIempty():
 
+    def test_show_file_locations(self, pmui_empty, capsys, normal_paths):
+        pmui_empty.show_file_locations()
+        printed = capsys.readouterr()[0]
+        assert f'Auth: {str(normal_paths[1])}' in printed
+        assert f'Keys: {str(normal_paths[2])}' in printed
+        assert f'Data: {str(normal_paths[3])}' in printed
+
     def test_get_unique_info_from_user(self, pmui_empty, monkeypatch):
         info = ('username', 'email', 'app', 'url')
         monkeypatch.setattr(pm_ui, 'get_info_from_user', lambda: info)
@@ -357,6 +364,14 @@ def pmui_w_stuff(pmui_empty, some_info):
 
 
 class TestPMUI():
+
+    # same test as before
+    def test_show_file_locations(self, pmui_w_stuff, capsys, normal_paths):
+        pmui_w_stuff.show_file_locations()
+        printed = capsys.readouterr()[0]
+        assert f'Auth: {str(normal_paths[1])}' in printed
+        assert f'Keys: {str(normal_paths[2])}' in printed
+        assert f'Data: {str(normal_paths[3])}' in printed
 
     def test_list_apps(self, pmui_w_stuff, capsys, some_info):
         apps = set(item[2] for item in some_info)
